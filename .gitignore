@@ -1,0 +1,37 @@
+# --- React / Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# --- Laravel / Backend ---
+backend/vendor/
+backend/node_modules/
+backend/public/storage
+backend/public/hot
+backend/storage/*.key
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/composer.lock
+backend/package-lock.json
+backend/auth.json
+backend/phpunit.result.cache
+backend/Homestead.json
+backend/Homestead.yaml
+backend/auth.json
+
+# --- OS / IDE Rác ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.bak
+*.tmp
