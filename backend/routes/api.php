@@ -1,0 +1,14 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+use App\Models\User;
+// API cho các bạn Frontend lấy danh sách sinh viên
+Route::get('/sinh-vien', function () {
+    return User::all();
+});
