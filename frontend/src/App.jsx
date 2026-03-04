@@ -7,7 +7,7 @@ function App() {
   useEffect(() => {
     // Gọi API từ Backend Laravel của bạn
     axios
-      .get("http://127.0.0.1:8000/api/sinh-vien")
+      .get("https://asyllabic-emelina-uncheated.ngrok-free.dev/api/sinh-vien")
       .then((res) => setStudents(res.data))
       .catch((err) => console.error("Lỗi gọi API:", err));
   }, []);
