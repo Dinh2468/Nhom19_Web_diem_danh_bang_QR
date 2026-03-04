@@ -7,9 +7,13 @@ function App() {
   useEffect(() => {
     // Gọi API từ Backend Laravel của bạn
     axios
-      .get("https://asyllabic-emelina-uncheated.ngrok-free.dev/api/sinh-vien")
+      .get("https://asyllabic-emelina-uncheated.ngrok-free.dev/api/sinh-vien", {
+        headers: {
+          "ngrok-skip-browser-warning": "true", // Dòng này giúp bỏ qua trang cảnh báo của Ngrok
+        },
+      })
       .then((res) => setStudents(res.data))
-      .catch((err) => console.error("Lỗi gọi API:", err));
+      .catch((err) => console.error("Lỗi:", err));
   }, []);
 
   return (
