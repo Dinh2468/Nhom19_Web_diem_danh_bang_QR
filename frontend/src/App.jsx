@@ -12,7 +12,15 @@ function App() {
           "ngrok-skip-browser-warning": "true", // Dòng này giúp bỏ qua trang cảnh báo của Ngrok
         },
       })
-      .then((res) => setStudents(res.data))
+      .then((res) => {
+        // Kiểm tra nếu res.data là mảng thì mới set, nếu không thì lấy res.data.data
+        const data = Array.isArray(res.data) ? res.data : res.data.data;
+        if (Array.isArray(data)) {
+          setStudents(data);
+        } else {
+          console.error("Dữ liệu trả về không phải mảng:", res.data);
+        }
+      })
       .catch((err) => console.error("Lỗi:", err));
   }, []);
 
