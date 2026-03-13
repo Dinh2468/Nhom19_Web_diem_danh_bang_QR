@@ -12,3 +12,7 @@ use App\Models\User;
 Route::get('/sinh-vien', function () {
     return User::all();
 });
+
+use App\Http\Controllers\Api\SinhVienController;
+
+Route::apiResource('sinh-vien', SinhVienController::class);

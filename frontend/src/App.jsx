@@ -1,41 +1,114 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
+const API_URL =
+  "https://asyllabic-emelina-uncheated.ngrok-free.dev/api/sinh-vien";
+const headers = { "ngrok-skip-browser-warning": "true" };
+
 function App() {
   const [students, setStudents] = useState([]);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+
+  // 1. Lấy danh sách (READ)
+  const fetchStudents = () => {
+    axios
+      .get(API_URL, { headers })
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : res.data.data;
+        setStudents(data || []);
+      })
+      .catch((err) => console.error("Lỗi lấy dữ liệu:", err));
+  };
 
   useEffect(() => {
-    // Gọi API từ Backend Laravel của bạn
-    axios
-      .get("https://asyllabic-emelina-uncheated.ngrok-free.dev/api/sinh-vien", {
-        headers: {
-          "ngrok-skip-browser-warning": "true", // Dòng này giúp bỏ qua trang cảnh báo của Ngrok
-        },
-      })
-      .then((res) => {
-        // Kiểm tra nếu res.data là mảng thì mới set, nếu không thì lấy res.data.data
-        const data = Array.isArray(res.data) ? res.data : res.data.data;
-        if (Array.isArray(data)) {
-          setStudents(data);
-        } else {
-          console.error("Dữ liệu trả về không phải mảng:", res.data);
-        }
-      })
-      .catch((err) => console.error("Lỗi:", err));
+    fetchStudents();
   }, []);
 
+  // 2. Thêm sinh viên (CREATE)
+  const addStudent = (e) => {
+    e.preventDefault();
+    axios
+      .post(API_URL, { name, email }, { headers })
+      .then(() => {
+        setName("");
+        setEmail(""); // Xóa form
+        fetchStudents(); // Load lại bảng
+      })
+      .catch((err) => {
+        console.error("Chi tiết lỗi:", err);
+        alert("Lỗi khi thêm!");
+      });
+  };
+
+  // 3. Xóa sinh viên (DELETE)
+  const deleteStudent = (id) => {
+    if (window.confirm("Bạn chắc chắn muốn xóa sinh viên này?")) {
+      axios
+        .delete(`${API_URL}/${id}`, { headers })
+        .then(() => fetchStudents())
+        .catch((err) => {
+          console.error("Chi tiết lỗi:", err);
+          alert("Lỗi khi xóa!");
+        });
+    }
+  };
+
   return (
-    <div style={{ padding: "30px", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ color: "#2c3e50" }}>Hệ thống điểm danh QR - Nhóm 19</h1>
-      <table
-        border="1"
-        style={{ width: "100%", borderCollapse: "collapse", marginTop: "20px" }}
+    <div
+      style={{
+        padding: "20px",
+        maxWidth: "800px",
+        margin: "0 auto",
+        fontFamily: "Arial",
+      }}
+    >
+      <h2>Quản lý Sinh viên - Nhóm 19</h2>
+
+      {/* FORM THÊM MỚI */}
+      <form
+        onSubmit={addStudent}
+        style={{
+          marginBottom: "20px",
+          padding: "15px",
+          border: "1px solid #ddd",
+        }}
       >
-        <thead style={{ backgroundColor: "#f2f2f2" }}>
+        <input
+          type="text"
+          placeholder="Họ tên"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ marginLeft: "10px" }}
+        />
+        <button
+          type="submit"
+          style={{
+            marginLeft: "10px",
+            backgroundColor: "green",
+            color: "white",
+          }}
+        >
+          Thêm mới
+        </button>
+      </form>
+
+      {/* BẢNG DANH SÁCH */}
+      <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead style={{ backgroundColor: "#f4f4f4" }}>
           <tr>
             <th>ID</th>
-            <th>Họ và tên</th>
+            <th>Họ tên</th>
             <th>Email</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -46,6 +119,14 @@ function App() {
                 {sv.name}
               </td>
               <td>{sv.email}</td>
+              <td>
+                <button
+                  onClick={() => deleteStudent(sv.id)}
+                  style={{ color: "red" }}
+                >
+                  Xóa
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
