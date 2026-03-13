@@ -17,8 +17,14 @@ class SinhVienController extends Controller
     // 2. Thêm mới (Create)
     public function store(Request $request)
     {
-        $sv = User::create($request->all());
-        return response()->json(['message' => 'Thêm thành công', 'data' => $sv]);
+        $data = $request->all();
+        $data['password'] = $data['password'] ?? bcrypt('123456');
+
+        $sv = User::create($data);
+        return response()->json([
+            'message' => 'Thêm thành công',
+            'data' => $sv
+        ]);
     }
 
     // 3. Xem chi tiết (Read detail)
