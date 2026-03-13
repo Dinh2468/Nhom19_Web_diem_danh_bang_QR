@@ -40,6 +40,37 @@ function App() {
         alert("Lỗi khi thêm!");
       });
   };
+  const [editingId, setEditingId] = useState(null); // Lưu ID sinh viên đang được sửa
+  const updateStudent = (id) => {
+    // Tìm sinh viên trong danh sách hiện tại để lấy dữ liệu mới từ ô input
+    const studentToUpdate = students.find((sv) => sv.id === id);
+
+    axios
+      .put(
+        `${API_URL}/${id}`,
+        {
+          name: studentToUpdate.name,
+          email: studentToUpdate.email,
+        },
+        { headers },
+      )
+      .then(() => {
+        setEditingId(null); // Thoát chế độ sửa
+        alert("Cập nhật thành công!");
+        fetchStudents();
+      })
+      .catch((err) => {
+        console.error("Chi tiết lỗi:", err);
+        alert("Lỗi khi cập nhật!");
+      });
+  };
+
+  // Hàm để thay đổi giá trị ngay trên dòng của bảng
+  const handleInputChange = (id, field, value) => {
+    setStudents(
+      students.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv)),
+    );
+  };
 
   // 3. Xóa sinh viên (DELETE)
   const deleteStudent = (id) => {
@@ -115,17 +146,57 @@ function App() {
           {students.map((sv) => (
             <tr key={sv.id} style={{ textAlign: "center" }}>
               <td>{sv.id}</td>
-              <td style={{ textAlign: "left", paddingLeft: "10px" }}>
-                {sv.name}
-              </td>
-              <td>{sv.email}</td>
               <td>
-                <button
-                  onClick={() => deleteStudent(sv.id)}
-                  style={{ color: "red" }}
-                >
-                  Xóa
-                </button>
+                {editingId === sv.id ? (
+                  <input
+                    value={sv.name}
+                    onChange={(e) =>
+                      handleInputChange(sv.id, "name", e.target.value)
+                    }
+                  />
+                ) : (
+                  sv.name
+                )}
+              </td>
+              <td>
+                {editingId === sv.id ? (
+                  <input
+                    value={sv.email}
+                    onChange={(e) =>
+                      handleInputChange(sv.id, "email", e.target.value)
+                    }
+                  />
+                ) : (
+                  sv.email
+                )}
+              </td>
+              <td>
+                {editingId === sv.id ? (
+                  <>
+                    <button
+                      onClick={() => updateStudent(sv.id)}
+                      style={{ color: "blue", marginRight: "5px" }}
+                    >
+                      Lưu
+                    </button>
+                    <button onClick={() => setEditingId(null)}>Hủy</button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setEditingId(sv.id)}
+                      style={{ color: "orange", marginRight: "5px" }}
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => deleteStudent(sv.id)}
+                      style={{ color: "red" }}
+                    >
+                      Xóa
+                    </button>
+                  </>
+                )}
               </td>
             </tr>
           ))}

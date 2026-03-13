@@ -33,6 +33,7 @@ class SinhVienController extends Controller
         return response()->json(User::findOrFail($id));
     }
 
+
     // 4. Cập nhật (Update)
     public function update(Request $request, $id)
     {
