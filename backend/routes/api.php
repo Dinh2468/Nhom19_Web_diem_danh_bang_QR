@@ -18,7 +18,7 @@ use App\Http\Controllers\Api\SinhVienController;
 
 Route::apiResource('sinh-vien', SinhVienController::class);
 
-Route::get('/run-migrate', function () {
-    Artisan::call('migrate:fresh --seed --force');
-    return "Đã cập nhật Database thành công!";
-});
+// Route::get('/run-migrate', function () {
+//     Artisan::call('migrate:fresh --seed --force');
+//     return "Đã cập nhật Database thành công!";
+// });
