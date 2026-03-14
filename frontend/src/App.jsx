@@ -12,7 +12,7 @@ function App() {
   // 1. Lấy danh sách (READ)
   const fetchStudents = () => {
     axios
-      .get(API_URL, {  })
+      .get(API_URL, {})
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.data;
         setStudents(data || []);
@@ -28,7 +28,7 @@ function App() {
   const addStudent = (e) => {
     e.preventDefault();
     axios
-      .post(API_URL, { name, email }, {  })
+      .post(API_URL, { name, email }, {})
       .then(() => {
         setName("");
         setEmail(""); // Xóa form
@@ -51,7 +51,7 @@ function App() {
           name: studentToUpdate.name,
           email: studentToUpdate.email,
         },
-        {  },
+        {},
       )
       .then(() => {
         setEditingId(null); // Thoát chế độ sửa
@@ -75,7 +75,7 @@ function App() {
   const deleteStudent = (id) => {
     if (window.confirm("Bạn chắc chắn muốn xóa sinh viên này?")) {
       axios
-        .delete(`${API_URL}/${id}`, {  })
+        .delete(`${API_URL}/${id}`, {})
         .then(() => fetchStudents())
         .catch((err) => {
           console.error("Chi tiết lỗi:", err);
@@ -133,7 +133,7 @@ function App() {
 
       {/* BẢNG DANH SÁCH */}
       <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead style={{ backgroundColor: "#f4f4f4" }}>
+        <thead style={{ backgroundColor: "#6666" }}>
           <tr>
             <th>ID</th>
             <th>Họ tên</th>
