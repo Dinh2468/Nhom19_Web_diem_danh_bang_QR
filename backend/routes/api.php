@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan; // Thêm dòng này vào
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
@@ -16,3 +17,8 @@ Route::get('/sinh-vien', function () {
 use App\Http\Controllers\Api\SinhVienController;
 
 Route::apiResource('sinh-vien', SinhVienController::class);
+
+Route::get('/run-migrate', function () {
+    Artisan::call('migrate:fresh --seed --force');
+    return "Đã cập nhật Database thành công!";
+});
