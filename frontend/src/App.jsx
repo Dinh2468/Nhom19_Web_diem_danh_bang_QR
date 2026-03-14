@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 
 const API_URL =
-  "https://asyllabic-emelina-uncheated.ngrok-free.dev/api/sinh-vien";
+  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/sinh-vien";
 const headers = { "ngrok-skip-browser-warning": "true" };
 
 function App() {
