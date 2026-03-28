@@ -11,11 +11,8 @@ class LopHocController extends Controller
     public function index()
     {
         // Lấy toàn bộ danh sách lớp học từ database
-        $classes = Classroom::all();
+        $classes = \App\Models\Classroom::all();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $classes
-        ]);
+        return response()->json($classes);
     }
 }

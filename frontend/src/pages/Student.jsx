@@ -4,6 +4,8 @@ import axios from "axios";
 // Link API Railway
 const API_URL =
   "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/sinh-vien";
+const CLASS_API_URL =
+  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/lop-hoc";
 
 function StudentPage() {
   const [students, setStudents] = useState([]);
@@ -15,7 +17,7 @@ function StudentPage() {
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState("");
 
-  // 1. Lấy danh sách (READ)
+  // 1. Lấy danh sách sinh viên
   const fetchStudents = useCallback(() => {
     setLoading(true);
     axios
@@ -26,52 +28,60 @@ function StudentPage() {
       })
       .catch((err) => console.error("Lỗi lấy dữ liệu:", err))
       .finally(() => setLoading(false));
-  }, []); // Mảng phụ thuộc rỗng
+  }, []);
 
+  // 2. Lấy danh sách lớp
+  // Tách riêng useEffect cho danh sách lớp
   useEffect(() => {
+    // 1. Gọi danh sách sinh viên lần đầu
     fetchStudents();
 
-    // Gọi API lấy danh sách lớp
+    // 2. Gọi danh sách lớp (Chỉ gọi 1 lần duy nhất)
     axios
       .get(
         "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/lop-hoc",
       )
       .then((res) => {
-        // Tùy vào cấu trúc Backend trả về, thường là res.data.data
-        setClasses(res.data.data || res.data);
+        const data = Array.isArray(res.data) ? res.data : res.data.data;
+        // Đảm bảo data không bị lặp bằng cách set trực tiếp
+        setClasses(data || []);
       })
       .catch((err) => console.error("Lỗi lấy danh sách lớp:", err));
-  }, [fetchStudents]);
+  }, []); // Mảng phụ thuộc rỗng [] đảm bảo code bên trong chỉ chạy 1 lần
 
-  // 2. Thêm sinh viên (CREATE)
+  // 3. Thêm sinh viên
   const addStudent = (e) => {
     e.preventDefault();
+    if (!classId) {
+      alert("Vui lòng chọn lớp học!");
+      return;
+    }
     axios
       .post(API_URL, {
         full_name: fullName,
         email: email,
         student_code: studentCode,
-        class_id: 1,
+        class_id: classId,
       })
       .then(() => {
         setFullName("");
         setEmail("");
         setStudentCode("");
+        setClassId("");
         fetchStudents();
         alert("Thêm thành công!");
       })
-      .catch((err) => {
-        alert("Lỗi: Mã SV hoặc Email có thể đã tồn tại.");
-      });
+      .catch((err) => alert("Lỗi: Mã SV hoặc Email có thể đã tồn tại."));
   };
 
-  // 3. Cập nhật (UPDATE)
+  // 4. Cập nhật sinh viên
   const updateStudent = (id) => {
     const sv = students.find((item) => item.id === id);
     axios
       .put(`${API_URL}/${id}`, {
         full_name: sv.full_name,
         email: sv.email,
+        class_id: sv.class_id, // Gửi ID lớp đã sửa lên server
       })
       .then(() => {
         setEditingId(null);
@@ -87,7 +97,7 @@ function StudentPage() {
     );
   };
 
-  // 4. Xóa (DELETE)
+  // 5. Xóa sinh viên
   const deleteStudent = (id) => {
     if (window.confirm("Bạn chắc chắn muốn xóa sinh viên này?")) {
       axios.delete(`${API_URL}/${id}`).then(() => fetchStudents());
@@ -96,30 +106,29 @@ function StudentPage() {
 
   return (
     <div className="space-y-8">
-      {/* Tiêu đề trang */}
       <div className="border-b border-gray-200 pb-4">
         <h2 className="text-2xl font-bold text-gray-800">Quản lý Sinh viên</h2>
       </div>
 
       {/* FORM THÊM MỚI */}
-      <section className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+      <section className="bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">
           Thêm sinh viên mới
         </h3>
         <form
           onSubmit={addStudent}
-          className="grid grid-cols-1 md:grid-cols-4 gap-4"
+          className="grid grid-cols-1 md:grid-cols-5 gap-4"
         >
           <input
             placeholder="Mã SV"
-            className="border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
+            className="border border-gray-300 rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
             value={studentCode}
             onChange={(e) => setStudentCode(e.target.value)}
             required
           />
           <input
             placeholder="Họ tên"
-            className="border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
+            className="border border-gray-300 rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
@@ -127,7 +136,7 @@ function StudentPage() {
           <input
             type="email"
             placeholder="Email"
-            className="border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
+            className="border border-gray-300 rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -135,7 +144,7 @@ function StudentPage() {
           <select
             value={classId}
             onChange={(e) => setClassId(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 bg-white text-gray-900"
+            className="border border-gray-300 rounded-md p-2 bg-white"
             required
           >
             <option value="">-- Chọn lớp --</option>
@@ -147,7 +156,7 @@ function StudentPage() {
           </select>
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition-all"
           >
             Thêm mới
           </button>
@@ -181,10 +190,10 @@ function StudentPage() {
                     {sv.id}
                   </td>
                   <td className="px-6 py-4">{sv.student_code}</td>
-                  <td className="px-6 py-4 text-gray-900">
+                  <td className="px-6 py-4">
                     {editingId === sv.id ? (
                       <input
-                        className="border border-blue-400 rounded px-2 py-1 outline-none w-full"
+                        className="border border-blue-400 rounded px-2 py-1 w-full"
                         value={sv.full_name}
                         onChange={(e) =>
                           handleInputChange(sv.id, "full_name", e.target.value)
@@ -197,7 +206,7 @@ function StudentPage() {
                   <td className="px-6 py-4">
                     {editingId === sv.id ? (
                       <input
-                        className="border border-blue-400 rounded px-2 py-1 outline-none w-full"
+                        className="border border-blue-400 rounded px-2 py-1 w-full"
                         value={sv.email}
                         onChange={(e) =>
                           handleInputChange(sv.id, "email", e.target.value)
@@ -208,9 +217,25 @@ function StudentPage() {
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
-                      {sv.classroom?.class_name || "Lớp 1"}
-                    </span>
+                    {editingId === sv.id ? (
+                      <select
+                        className="border border-blue-400 rounded px-2 py-1 w-full bg-white"
+                        value={sv.class_id}
+                        onChange={(e) =>
+                          handleInputChange(sv.id, "class_id", e.target.value)
+                        }
+                      >
+                        {classes.map((cls) => (
+                          <option key={cls.id} value={cls.id}>
+                            {cls.class_name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                        {sv.classroom?.class_name || "Chưa xếp lớp"}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-center space-x-3">
                     {editingId === sv.id ? (
