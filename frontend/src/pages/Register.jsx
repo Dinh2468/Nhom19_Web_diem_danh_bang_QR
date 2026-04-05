@@ -58,7 +58,7 @@ const Register = () => {
                 name="full_name"
                 value={formData.full_name}
                 onChange={handleChange}
-                placeholder="Nhập họ và tên"
+                placeholder="Nhập họ và"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all duration-200 bg-gray-50/50"
                 required
               />
