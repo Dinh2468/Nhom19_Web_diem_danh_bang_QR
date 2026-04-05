@@ -8,18 +8,18 @@ import {
 } from "react-router-dom";
 import HomePage from "./pages/Home";
 import StudentPage from "./pages/Student";
+import TeacherPage from "./pages/Teacher";
 
-// Thành phần NavLink để tối ưu code và hiển thị trạng thái đang chọn (active)
 const NavLink = ({ to, children }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
     <Link
       to={to}
-      className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+      className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
         isActive
           ? "bg-blue-600 text-white shadow-md"
-          : "text-gray-600 hover:bg-gray-100 hover:text-blue-600"
+          : "text-gray-700 hover:text-blue-600"
       }`}
     >
       {children}
@@ -30,38 +30,32 @@ const NavLink = ({ to, children }) => {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        {/* Navbar hiện đại */}
-        <nav className="bg-white shadow-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16 items-center">
-              {/* Logo / Tên dự án */}
-
-              {/* Menu điều hướng */}
-              <div className="hidden sm:flex space-x-4">
+      <div className="min-h-screen bg-white">
+        <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex justify-between items-center h-16">
+              <Link to="/" className="text-xl font-bold text-blue-600">
+                QR Attendance
+              </Link>
+              <div className="hidden md:flex space-x-8 items-center">
                 <NavLink to="/">Trang Chủ</NavLink>
                 <NavLink to="/students">Sinh Viên</NavLink>
+                <NavLink to="/teachers">Giáo viên</NavLink>
               </div>
-
-              {/* Mobile menu button (Có thể thêm sau nếu cần) */}
-              <div className="sm:hidden text-gray-400 italic text-sm">Menu</div>
             </div>
           </div>
         </nav>
 
-        {/* Nội dung các trang với hiệu ứng chuyển trang nhẹ */}
-        <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[70vh]">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/students" element={<StudentPage />} />
-            </Routes>
-          </div>
+        <main className="max-w-7xl mx-auto px-6 py-8">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/students" element={<StudentPage />} />
+            <Route path="/teachers" element={<TeacherPage />} />
+          </Routes>
         </main>
 
-        {/* Footer đơn giản */}
-        <footer className="text-center py-6 text-gray-500 text-sm">
-          &copy; 2026 Hệ thống quản lý sinh viên.
+        <footer className="text-center py-8 text-gray-500 text-sm border-t border-gray-200">
+          &copy; 2026 STU Attendance System.
         </footer>
       </div>
     </Router>

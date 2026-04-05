@@ -1,131 +1,125 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-// Link API Railway
 const API_URL =
-  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/sinh-vien";
-const CLASS_API_URL =
-  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/lop-hoc";
+  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/giao-vien";
 
-function StudentPage() {
-  const [students, setStudents] = useState([]);
+function TeacherPage() {
+  const [teachers, setTeachers] = useState([]);
+  const [teacherCode, setTeacherCode] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [studentCode, setStudentCode] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [classes, setClasses] = useState([]);
-  const [classId, setClassId] = useState("");
 
-  // 1. Lấy danh sách sinh viên
-  const fetchStudents = useCallback(() => {
+  const fetchTeachers = useCallback(() => {
     setLoading(true);
     axios
       .get(API_URL)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.data;
-        setStudents(data || []);
+        setTeachers(data || []);
       })
-      .catch((err) => console.error("Lỗi lấy dữ liệu:", err))
+      .catch((err) => console.error("Lỗi lấy dữ liệu giáo viên:", err))
       .finally(() => setLoading(false));
   }, []);
 
-  // 2. Lấy danh sách lớp
-  // Tách riêng useEffect cho danh sách lớp
   useEffect(() => {
-    // 1. Gọi danh sách sinh viên lần đầu
-    fetchStudents();
+    fetchTeachers();
+  }, [fetchTeachers]);
 
-    // 2. Gọi danh sách lớp (Chỉ gọi 1 lần duy nhất)
-    axios
-      .get(
-        "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/lop-hoc",
-      )
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : res.data.data;
-        // Đảm bảo data không bị lặp bằng cách set trực tiếp
-        setClasses(data || []);
-      })
-      .catch((err) => console.error("Lỗi lấy danh sách lớp:", err));
-  }, []); // Mảng phụ thuộc rỗng [] đảm bảo code bên trong chỉ chạy 1 lần
-
-  // 3. Thêm sinh viên
-  const addStudent = (e) => {
+  const addTeacher = (e) => {
     e.preventDefault();
-    if (!classId) {
-      alert("Vui lòng chọn lớp học!");
+    if (!teacherCode || !fullName || !email) {
+      alert("Vui lòng điền đầy đủ thông tin giáo viên.");
       return;
     }
+
     axios
       .post(API_URL, {
+        teacher_code: teacherCode,
         full_name: fullName,
-        email: email,
-        student_code: studentCode,
-        class_id: classId,
+        email,
       })
       .then(() => {
+        setTeacherCode("");
         setFullName("");
         setEmail("");
-        setStudentCode("");
-        setClassId("");
-        fetchStudents();
-        alert("Thêm thành công!");
+        fetchTeachers();
+        alert("Thêm giáo viên thành công!");
       })
-      .catch((err) => alert("Lỗi: Mã SV hoặc Email có thể đã tồn tại."));
+      .catch((err) => {
+        console.error("Lỗi thêm giáo viên:", err);
+        alert("Không thể thêm giáo viên. Vui lòng kiểm tra lại dữ liệu.");
+      });
   };
 
-  // 4. Cập nhật sinh viên
-  const updateStudent = (id) => {
-    const sv = students.find((item) => item.id === id);
+  const updateTeacher = (id) => {
+    const teacher = teachers.find((item) => item.id === id);
+    if (!teacher) return;
+
     axios
       .put(`${API_URL}/${id}`, {
-        full_name: sv.full_name,
-        email: sv.email,
-        class_id: sv.class_id, // Gửi ID lớp đã sửa lên server
+        teacher_code: teacher.teacher_code,
+        full_name: teacher.full_name,
+        email: teacher.email,
       })
       .then(() => {
         setEditingId(null);
-        alert("Cập nhật thành công!");
-        fetchStudents();
+        fetchTeachers();
+        alert("Cập nhật giáo viên thành công!");
       })
-      .catch((err) => console.error("Lỗi cập nhật:", err));
+      .catch((err) => {
+        console.error("Lỗi cập nhật giáo viên:", err);
+        alert("Không thể cập nhật giáo viên. Vui lòng thử lại.");
+      });
   };
 
   const handleInputChange = (id, field, value) => {
-    setStudents(
-      students.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv)),
+    setTeachers(
+      teachers.map((teacher) =>
+        teacher.id === id ? { ...teacher, [field]: value } : teacher,
+      ),
     );
   };
 
-  // 5. Xóa sinh viên
-  const deleteStudent = (id) => {
-    if (window.confirm("Bạn chắc chắn muốn xóa sinh viên này?")) {
-      axios.delete(`${API_URL}/${id}`).then(() => fetchStudents());
+  const deleteTeacher = (id) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa giáo viên này?")) {
+      return;
     }
+
+    axios
+      .delete(`${API_URL}/${id}`)
+      .then(() => {
+        fetchTeachers();
+      })
+      .catch((err) => {
+        console.error("Lỗi xóa giáo viên:", err);
+        alert("Không thể xóa giáo viên. Vui lòng thử lại.");
+      });
   };
 
   return (
     <div className="space-y-8">
       <div className="border-b border-gray-300 pb-6">
-        <h2 className="text-3xl font-bold text-gray-900">Quản lý Sinh viên</h2>
-        <p className="text-gray-600 mt-2">Lưu trữ và điều chỉnh danh sách hộ sơ sinh viên trong hệ thống</p>
+        <h2 className="text-3xl font-bold text-gray-900">Quản lý Giáo viên</h2>
+        <p className="text-gray-600 mt-2">Lưu trữ và điều chỉnh danh sách hộ sơ giáo viên trong hệ thống</p>
       </div>
 
-      {/* FORM THÊM MỚI */}
       <section className="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl border border-gray-200 shadow-sm">
         <h3 className="text-lg font-bold mb-6 text-gray-900 flex items-center gap-2">
           <span className="inline-block w-1 h-6 bg-blue-600 rounded"></span>
-          Thêm sinh viên mới
+          Thêm giáo viên mới
         </h3>
         <form
-          onSubmit={addStudent}
-          className="grid grid-cols-1 md:grid-cols-5 gap-4"
+          onSubmit={addTeacher}
+          className="grid grid-cols-1 md:grid-cols-4 gap-4"
         >
           <input
-            placeholder="Mã SV"
+            placeholder="Mã GV"
             className="border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            value={studentCode}
-            onChange={(e) => setStudentCode(e.target.value)}
+            value={teacherCode}
+            onChange={(e) => setTeacherCode(e.target.value)}
             required
           />
           <input
@@ -143,19 +137,6 @@ function StudentPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <select
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 bg-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            required
-          >
-            <option value="">-- Chọn lớp --</option>
-            {classes.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.class_name}
-              </option>
-            ))}
-          </select>
           <button
             type="submit"
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-md hover:shadow-lg"
@@ -165,90 +146,91 @@ function StudentPage() {
         </form>
       </section>
 
-      {/* BẢNG DANH SÁCH */}
       <section>
         <h3 className="text-lg font-bold mb-4 text-gray-900 flex items-center gap-2">
           <span className="inline-block w-1 h-6 bg-blue-600 rounded"></span>
-          Danh sách sinh viên
+          Danh sách giáo viên
         </h3>
         <div className="overflow-x-auto shadow-md border border-gray-300 rounded-xl">
           <table className="w-full text-sm text-left text-gray-700">
             <thead className="text-xs font-bold text-gray-900 uppercase bg-gray-100 border-b border-gray-300">
               <tr>
                 <th className="px-6 py-4">#</th>
-                <th className="px-6 py-4">Mã SV</th>
+                <th className="px-6 py-4">Mã GV</th>
                 <th className="px-6 py-4">Họ tên</th>
                 <th className="px-6 py-4">Email</th>
-                <th className="px-6 py-4">Lớp</th>
                 <th className="px-6 py-4 text-center">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-6 text-gray-500">
+                  <td colSpan="5" className="text-center py-6 text-gray-500">
                     ⏳ Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : (
-                students.map((sv) => (
-                  <tr key={sv.id} className="hover:bg-blue-50 transition-colors">
+                teachers.map((teacher) => (
+                  <tr
+                    key={teacher.id}
+                    className="hover:bg-blue-50 transition-colors"
+                  >
                     <td className="px-6 py-4 font-bold text-blue-600">
-                      #{sv.id}
+                      #{teacher.id}
                     </td>
-                    <td className="px-6 py-4">{sv.student_code}</td>
+                    <td className="px-6 py-4">
+                      {editingId === teacher.id ? (
+                        <input
+                          className="border border-blue-400 rounded px-3 py-2 w-full"
+                          value={teacher.teacher_code}
+                          onChange={(e) =>
+                            handleInputChange(
+                              teacher.id,
+                              "teacher_code",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      ) : (
+                        teacher.teacher_code
+                      )}
+                    </td>
                     <td className="px-6 py-4 font-medium">
-                      {editingId === sv.id ? (
+                      {editingId === teacher.id ? (
                         <input
                           className="border border-blue-400 rounded px-3 py-2 w-full"
-                          value={sv.full_name}
+                          value={teacher.full_name}
                           onChange={(e) =>
-                            handleInputChange(sv.id, "full_name", e.target.value)
+                            handleInputChange(
+                              teacher.id,
+                              "full_name",
+                              e.target.value,
+                            )
                           }
                         />
                       ) : (
-                        sv.full_name
+                        teacher.full_name
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      {editingId === sv.id ? (
+                      {editingId === teacher.id ? (
                         <input
+                          type="email"
                           className="border border-blue-400 rounded px-3 py-2 w-full"
-                          value={sv.email}
+                          value={teacher.email}
                           onChange={(e) =>
-                            handleInputChange(sv.id, "email", e.target.value)
+                            handleInputChange(teacher.id, "email", e.target.value)
                           }
                         />
                       ) : (
-                        sv.email
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingId === sv.id ? (
-                        <select
-                          className="border border-blue-400 rounded px-3 py-2 w-full bg-white"
-                          value={sv.class_id}
-                          onChange={(e) =>
-                            handleInputChange(sv.id, "class_id", e.target.value)
-                          }
-                        >
-                          {classes.map((cls) => (
-                            <option key={cls.id} value={cls.id}>
-                              {cls.class_name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
-                          {sv.classroom?.class_name || "Chưa xếp lớp"}
-                        </span>
+                        teacher.email
                       )}
                     </td>
                     <td className="px-6 py-4 text-center space-x-2">
-                      {editingId === sv.id ? (
+                      {editingId === teacher.id ? (
                         <>
                           <button
-                            onClick={() => updateStudent(sv.id)}
+                            onClick={() => updateTeacher(teacher.id)}
                             className="text-green-600 hover:text-green-700 font-bold hover:bg-green-50 px-3 py-2 rounded transition"
                           >
                             ✓ Lưu
@@ -263,13 +245,13 @@ function StudentPage() {
                       ) : (
                         <>
                           <button
-                            onClick={() => setEditingId(sv.id)}
+                            onClick={() => setEditingId(teacher.id)}
                             className="text-blue-600 hover:text-blue-700 font-bold hover:bg-blue-50 px-3 py-2 rounded transition"
                           >
                             ✎ Sửa
                           </button>
                           <button
-                            onClick={() => deleteStudent(sv.id)}
+                            onClick={() => deleteTeacher(teacher.id)}
                             className="text-red-600 hover:text-red-700 font-bold hover:bg-red-50 px-3 py-2 rounded transition"
                           >
                             🗑 Xóa
@@ -288,4 +270,4 @@ function StudentPage() {
   );
 }
 
-export default StudentPage;
+export default TeacherPage;
