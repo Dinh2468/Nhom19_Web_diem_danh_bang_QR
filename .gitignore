@@ -2,6 +2,7 @@
 frontend/node_modules/
 frontend/dist/
 frontend/build/
+frontend/.env
 frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
@@ -19,8 +20,6 @@ backend/storage/*.key
 backend/.env
 backend/.env.backup
 backend/.env.production
-backend/composer.lock
-backend/package-lock.json
 backend/auth.json
 backend/phpunit.result.cache
 backend/Homestead.json
