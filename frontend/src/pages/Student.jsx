@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-// Link API Railway
-const API_URL =
-  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/sinh-vien";
-const CLASS_API_URL =
-  "https://nhom19webdiemdanhbangqr-production.up.railway.app/api/lop-hoc";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const STUDENT_API_URL = `${BASE_URL}/sinh-vien`;
+const CLASS_API_URL = `${BASE_URL}/lop-hoc`;
 
 function StudentPage() {
   const [students, setStudents] = useState([]);
@@ -21,7 +20,7 @@ function StudentPage() {
   const fetchStudents = useCallback(() => {
     setLoading(true);
     axios
-      .get(API_URL)
+      .get(STUDENT_API_URL)
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : res.data.data;
         setStudents(data || []);
@@ -33,7 +32,6 @@ function StudentPage() {
   // 2. Lấy danh sách lớp
   useEffect(() => {
     fetchStudents();
-
     axios
       .get(CLASS_API_URL)
       .then((res) => {
@@ -51,7 +49,7 @@ function StudentPage() {
       return;
     }
     axios
-      .post(API_URL, {
+      .post(STUDENT_API_URL, {
         full_name: fullName,
         email: email,
         student_code: studentCode,
@@ -72,7 +70,7 @@ function StudentPage() {
   const updateStudent = (id) => {
     const sv = students.find((item) => item.id === id);
     axios
-      .put(`${API_URL}/${id}`, {
+      .put(`${STUDENT_API_URL}/${id}`, {
         full_name: sv.full_name,
         email: sv.email,
         class_id: sv.class_id,
@@ -87,14 +85,14 @@ function StudentPage() {
 
   const handleInputChange = (id, field, value) => {
     setStudents(
-      students.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv))
+      students.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv)),
     );
   };
 
   // 5. Xóa sinh viên
   const deleteStudent = (id) => {
     if (window.confirm("Bạn chắc chắn muốn xóa sinh viên này?")) {
-      axios.delete(`${API_URL}/${id}`).then(() => fetchStudents());
+      axios.delete(`${STUDENT_API_URL}/${id}`).then(() => fetchStudents());
     }
   };
 
@@ -107,12 +105,27 @@ function StudentPage() {
       {/* HEADER TRANG */}
       <div className="relative flex items-center justify-between border-b border-gray-100 pb-5">
         <div>
-          <h2 className="text-3xl font-extrabold text-gray-900">Quản lý Sinh viên</h2>
-          <p className="text-sm text-gray-500 mt-1">Lưu trữ và điều chỉnh danh sách sinh viên trong hệ thống</p>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Quản lý Sinh viên
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Lưu trữ và điều chỉnh danh sách sinh viên trong hệ thống
+          </p>
         </div>
         <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
           </svg>
         </div>
       </div>
@@ -121,12 +134,19 @@ function StudentPage() {
       <section className="relative bg-white/90 backdrop-blur-sm p-8 rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/30">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-2 h-6 bg-indigo-600 rounded-full"></div>
-          <h3 className="text-lg font-bold text-gray-800">Thêm sinh viên mới</h3>
+          <h3 className="text-lg font-bold text-gray-800">
+            Thêm sinh viên mới
+          </h3>
         </div>
-        
-        <form onSubmit={addStudent} className="grid grid-cols-1 md:grid-cols-5 gap-5">
+
+        <form
+          onSubmit={addStudent}
+          className="grid grid-cols-1 md:grid-cols-5 gap-5"
+        >
           <div className="md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Mã SV</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Mã SV
+            </label>
             <input
               placeholder="Ví dụ: SV001"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all duration-200 bg-gray-50/50 text-sm"
@@ -135,9 +155,11 @@ function StudentPage() {
               required
             />
           </div>
-          
+
           <div className="md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Họ tên</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Họ tên
+            </label>
             <input
               placeholder="Nhập họ và tên"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all duration-200 bg-gray-50/50 text-sm"
@@ -148,7 +170,9 @@ function StudentPage() {
           </div>
 
           <div className="md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Email</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Email
+            </label>
             <input
               type="email"
               placeholder="example@gmail.com"
@@ -160,7 +184,9 @@ function StudentPage() {
           </div>
 
           <div className="md:col-span-1">
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Lớp học</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Lớp học
+            </label>
             <select
               value={classId}
               onChange={(e) => setClassId(e.target.value)}
@@ -181,8 +207,19 @@ function StudentPage() {
               type="submit"
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl hover:shadow-lg hover:shadow-indigo-200 transition-all duration-300 flex items-center justify-center text-sm"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
               </svg>
               Thêm mới
             </button>
@@ -208,7 +245,9 @@ function StudentPage() {
               <tr>
                 <td colSpan="6" className="text-center py-10">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600 mb-2"></div>
-                  <div className="text-gray-500 font-medium">Đang tải dữ liệu...</div>
+                  <div className="text-gray-500 font-medium">
+                    Đang tải dữ liệu...
+                  </div>
                 </td>
               </tr>
             ) : students.length === 0 ? (
@@ -219,11 +258,16 @@ function StudentPage() {
               </tr>
             ) : (
               students.map((sv) => (
-                <tr key={sv.id} className="hover:bg-indigo-50/30 transition-colors duration-150">
+                <tr
+                  key={sv.id}
+                  className="hover:bg-indigo-50/30 transition-colors duration-150"
+                >
                   <td className="px-6 py-4 font-bold text-indigo-600">
                     #{sv.id}
                   </td>
-                  <td className="px-6 py-4 font-semibold text-gray-800">{sv.student_code}</td>
+                  <td className="px-6 py-4 font-semibold text-gray-800">
+                    {sv.student_code}
+                  </td>
                   <td className="px-6 py-4">
                     {editingId === sv.id ? (
                       <input
@@ -234,7 +278,9 @@ function StudentPage() {
                         }
                       />
                     ) : (
-                      <span className="font-medium text-gray-700">{sv.full_name}</span>
+                      <span className="font-medium text-gray-700">
+                        {sv.full_name}
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -279,8 +325,19 @@ function StudentPage() {
                           onClick={() => updateStudent(sv.id)}
                           className="text-green-600 hover:text-green-700 font-bold text-sm flex items-center gap-1"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
                           </svg>
                           Lưu
                         </button>
@@ -288,8 +345,19 @@ function StudentPage() {
                           onClick={() => setEditingId(null)}
                           className="text-gray-400 hover:text-gray-600 font-bold text-sm flex items-center gap-1"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                           Hủy
                         </button>
@@ -300,8 +368,19 @@ function StudentPage() {
                           onClick={() => setEditingId(sv.id)}
                           className="text-indigo-600 hover:text-indigo-800 font-bold text-sm flex items-center gap-1"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
                           </svg>
                           Sửa
                         </button>
@@ -309,8 +388,19 @@ function StudentPage() {
                           onClick={() => deleteStudent(sv.id)}
                           className="text-red-500 hover:text-red-700 font-bold text-sm flex items-center gap-1"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
                           </svg>
                           Xóa
                         </button>
