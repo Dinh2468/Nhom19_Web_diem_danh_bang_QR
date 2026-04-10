@@ -25,13 +25,12 @@ class DemoDataSeeder extends Seeder
         $c4 = Classroom::create(['class_name' => 'Marketing K14']);
         $c5 = Classroom::create(['class_name' => 'Ngôn Ngữ Anh K15']);
 
-        // 2. Thêm Môn học [cite: 25]
-        $s1 = Subject::create(['subject_name' => 'Lập trình Web']);
-        $s2 = Subject::create(['subject_name' => 'Cơ sở dữ liệu']);
-        $s3 = Subject::create(['subject_name' => 'Trí tuệ nhân tạo']);
-        $s4 = Subject::create(['subject_name' => 'Tiếng Anh chuyên ngành']);
-        $s5 = Subject::create(['subject_name' => 'Quản trị dự án']);
-
+        // 2. Thêm Môn học
+        $s1 = Subject::create(['subject_code' => 'WEB101', 'subject_name' => 'Lập trình Web']);
+        $s2 = Subject::create(['subject_code' => 'DB201', 'subject_name' => 'Cơ sở dữ liệu']);
+        $s3 = Subject::create(['subject_code' => 'AI301', 'subject_name' => 'Trí tuệ nhân tạo']);
+        $s4 = Subject::create(['subject_code' => 'ENG401', 'subject_name' => 'Tiếng Anh chuyên ngành']);
+        $s5 = Subject::create(['subject_code' => 'PM501', 'subject_name' => 'Quản trị dự án']);
         // 3. Thêm Giáo viên [cite: 26]
         $gv1 = Teacher::create(['teacher_code' => 'GV001', 'full_name' => 'Nguyễn Văn An', 'email' => 'an.nv@school.edu.vn']);
         $gv2 = Teacher::create(['teacher_code' => 'GV002', 'full_name' => 'Trần Thị Bình', 'email' => 'binh.tt@school.edu.vn']);
@@ -69,10 +68,38 @@ class DemoDataSeeder extends Seeder
 
         // 8. Thêm Users [cite: 29]
         $pw = Hash::make('password123'); // Bạn có thể dùng password từ demo.txt nếu muốn
-        User::create(['name' => 'Admin System', 'email' => 'admin@school.edu.vn', 'password' => $pw, 'role' => 'admin']);
-        User::create(['name' => 'GV Nguyễn Văn An', 'email' => 'an.nv@school.edu.vn', 'password' => $pw, 'role' => 'teacher', 'teacher_id' => $gv1->id]);
-        User::create(['name' => 'GV Trần Thị Bình', 'email' => 'binh.tt@school.edu.vn', 'password' => $pw, 'role' => 'teacher', 'teacher_id' => $gv2->id]);
-        User::create(['name' => 'SV Trung Kiên', 'email' => 'kien.nt@student.edu.vn', 'password' => $pw, 'role' => 'student', 'student_id' => $sv1->id]);
-        User::create(['name' => 'SV Thu Thảo', 'email' => 'thao.lt@student.edu.vn', 'password' => $pw, 'role' => 'student', 'student_id' => $sv2->id]);
+        User::create([
+            'name' => 'Admin System',
+            'email' => 'admin@school.edu.vn',
+            'password' => $pw,
+            'role' => 'admin',
+            'qr_token' => 'ADMIN_SYSTEM_QR' // Mã QR cho Admin
+        ]);
+        User::create([
+            'name' => 'GV Nguyễn Văn An',
+            'email' => 'an.nv@school.edu.vn',
+            'password' => $pw,
+            'role' => 'teacher',
+            'teacher_id' => $gv1->id,
+            'qr_token' => 'TEA_' . $gv1->teacher_code // QR dựa trên mã giáo viên
+        ]);
+
+        // Trong mục 8
+        User::create([
+            'name' => $sv1->full_name,
+            'email' => $sv1->email,
+            'password' => $pw,
+            'role' => 'student',
+            'student_id' => $sv1->id,
+            'qr_token' => 'STU_' . $sv1->student_code
+        ]);
+        User::create([
+            'name' => 'SV Thu Thảo',
+            'email' => 'thao.lt@student.edu.vn',
+            'password' => $pw,
+            'role' => 'student',
+            'student_id' => $sv2->id,
+            'qr_token' => 'STU_' . $sv2->student_code
+        ]);
     }
 }
