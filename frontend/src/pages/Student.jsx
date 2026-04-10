@@ -4,7 +4,7 @@ import axios from "axios";
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const STUDENT_API_URL = `${BASE_URL}/sinh-vien`;
-const CLASS_API_URL = `${BASE_URL}/lop-hoc`;
+const CLASS_API_URL = `${BASE_URL}/classes`;
 
 function StudentPage() {
   const [students, setStudents] = useState([]);
@@ -63,7 +63,9 @@ function StudentPage() {
         fetchStudents();
         alert("Thêm thành công!");
       })
-      .catch((err) => alert("Lỗi: Mã SV hoặc Email có thể đã tồn tại."));
+      .catch((err) =>
+        console.error("Lỗi: Mã SV hoặc Email có thể đã tồn tại.", err),
+      );
   };
 
   // 4. Cập nhật sinh viên
