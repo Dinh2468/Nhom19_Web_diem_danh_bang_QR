@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\SinhVienController;
 use App\Http\Controllers\Api\LopHocController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClassController;
+use App\Http\Controllers\Api\SubjectController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -13,11 +15,10 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
+
     Route::post('/logout', [AuthController::class, 'logout']);
-    // Bạn có thể đưa các route điểm danh của SinhVienController và TeacherController vào đây
-    //Đường dẫn: /api/sinh-vien
     Route::apiResource('sinh-vien', SinhVienController::class);
-    // Đường dẫn: /api/lop-hoc
-    Route::get('/lop-hoc', [LopHocController::class, 'index']);
+    Route::apiResource('classes', ClassController::class);
     Route::apiResource('teachers', TeacherController::class);
+    Route::apiResource('subjects', SubjectController::class);
 });

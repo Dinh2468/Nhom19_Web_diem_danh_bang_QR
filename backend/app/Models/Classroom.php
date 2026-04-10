@@ -8,7 +8,7 @@ class Classroom extends Model
 {
     protected $table = 'classes';
     protected $fillable = ['class_name'];
-    public $timestamps = false;
+    public $timestamps = true;
     public function students()
     {
         return $this->hasMany(Student::class, 'class_id');
