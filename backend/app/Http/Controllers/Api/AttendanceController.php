@@ -8,9 +8,24 @@ use App\Models\Attendance;
 use App\Models\ClassSession;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\AttendanceExport;
 class AttendanceController extends Controller
 {
+    public function studentHistory() {
+    $history = Attendance::where('student_id', auth()->user()->student_id)
+        ->with('session.course')
+        ->get();
+    return response()->json($history);
+}
+    public function getRoomStatus($sessionId) {
+    $list = Attendance::where('session_id', $sessionId)
+        ->with('student') // Lấy kèm thông tin tên sinh viên
+        ->orderBy('checkin_time', 'desc')
+        ->get();
+        
+    return response()->json($list);
+}
     /**
      * Xử lý lưu dữ liệu điểm danh
      */
@@ -67,4 +82,7 @@ class AttendanceController extends Controller
             ], 400);
         }
     }
+    public function exportExcel($sessionId) {
+    return Excel::download(new AttendanceExport($sessionId), "diem_danh_buoi_$sessionId.xlsx");
+}
 }

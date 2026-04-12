@@ -23,4 +23,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('teachers', TeacherController::class);
     Route::apiResource('subjects', SubjectController::class);
     Route::post('/attendance', [AttendanceController::class, 'store']);
+    // Thêm dòng này để xem danh sách sinh viên đã điểm danh trong 1 phiên
+    Route::get('/attendance/session/{sessionId}', [AttendanceController::class, 'getRoomStatus']);
+    
+    // Thêm dòng này nếu bạn muốn sinh viên xem lại lịch sử của chính họ
+    Route::get('/attendance/history', [AttendanceController::class, 'studentHistory']);
+    Route::get('/attendance/export/{sessionId}', [AttendanceController::class, 'exportExcel']);
 });
