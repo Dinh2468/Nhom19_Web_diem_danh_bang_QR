@@ -10,12 +10,15 @@ use App\Http\Controllers\Api\ClassController;
 use App\Http\Controllers\Api\SubjectController;
 use App\Http\Controllers\Api\AttendanceController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
+// 1. CÁC ROUTE KHÔNG CẦN ĐĂNG NHẬP (PUBLIC)
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']); // ĐƯA RA NGOÀI NÀY
+
+// 2. CÁC ROUTE BẮT BUỘC PHẢI ĐĂNG NHẬP (PROTECTED)
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('sinh-vien', SinhVienController::class);
@@ -23,10 +26,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('teachers', TeacherController::class);
     Route::apiResource('subjects', SubjectController::class);
     Route::post('/attendance', [AttendanceController::class, 'store']);
-    // Thêm dòng này để xem danh sách sinh viên đã điểm danh trong 1 phiên
     Route::get('/attendance/session/{sessionId}', [AttendanceController::class, 'getRoomStatus']);
     
-    // Thêm dòng này nếu bạn muốn sinh viên xem lại lịch sử của chính họ
+    // ĐÃ CẮT DÒNG REGISTER KHỎI ĐÂY
+    
     Route::get('/attendance/history', [AttendanceController::class, 'studentHistory']);
     Route::get('/attendance/export/{sessionId}', [AttendanceController::class, 'exportExcel']);
 });
