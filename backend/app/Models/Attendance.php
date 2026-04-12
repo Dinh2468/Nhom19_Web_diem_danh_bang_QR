@@ -8,7 +8,14 @@ class Attendance extends Model
 {
     protected $table = 'attendance';
 
-    protected $fillable = ['student_id', 'session_id', 'status', 'checkin_time', 'latitude', 'longitude'];
+   protected $fillable = [
+    'student_id', 
+    'session_id', 
+    'checkin_time', 
+    'status', 
+    'latitude', 
+    'longitude'
+];
 
     public $timestamps = false;
     public function student()

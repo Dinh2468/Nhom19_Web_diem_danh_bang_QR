@@ -8,6 +8,7 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClassController;
 use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\AttendanceController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -21,4 +22,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('classes', ClassController::class);
     Route::apiResource('teachers', TeacherController::class);
     Route::apiResource('subjects', SubjectController::class);
+    Route::post('/attendance', [AttendanceController::class, 'store']);
 });
