@@ -10,6 +10,7 @@ use App\Models\Teacher;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -67,6 +68,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'login_id' => 'required', // Nhận Email từ Login.jsx
+            'login_id' => 'required', // Có thể là Email, MSSV hoặc MSGV
             'password' => 'required',
         ]);
 
@@ -103,6 +105,38 @@ class AuthController extends Controller
             'token_type'   => 'Bearer',
             'role'         => $user->role,
             'user'         => $user
+        // 1. Kiểm tra nếu người dùng nhập Email
+        if (filter_var($loginId, FILTER_VALIDATE_EMAIL)) {
+            // Tìm bất kỳ ai có email này (Admin, Student, hay Teacher đều được)
+            $user = User::where('email', $loginId)->first();
+        } else {
+            // 2. Nếu không phải email, kiểm tra xem có phải MSSV không
+            $student = Student::where('student_code', $loginId)->first();
+            if ($student) {
+                $user = User::where('student_id', $student->id)->first();
+            } else {
+                // 3. Cuối cùng kiểm tra xem có phải MSGV không
+                $teacher = Teacher::where('teacher_code', $loginId)->first();
+                if ($teacher) {
+                    $user = User::where('teacher_id', $teacher->id)->first();
+                }
+            }
+        }
+
+        // Kiểm tra mật khẩu và trả về token
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Thông tin đăng nhập không chính xác.'
+            ], 401);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Đăng nhập thành công!',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user
         ]);
     }
 
@@ -113,5 +147,72 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Đã đăng xuất thành công!']);
+    }
+}
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
+            'role'     => 'required|string|in:student,teacher',
+        ]);
+
+        $role = $request->role;
+        $studentId = null;
+        $teacherId = null;
+
+        // BƯỚC 1: Sinh mã duy nhất TRƯỚC khi tạo bản ghi
+        do {
+            $generatedId = ($role === 'student' ? 'SV' : 'GV') . rand(10000, 99999);
+            $exists = ($role === 'student')
+                ? Student::where('student_code', $generatedId)->exists()
+                : Teacher::where('teacher_code', $generatedId)->exists();
+        } while ($exists);
+
+        // BƯỚC 2: Dùng mã duy nhất đó để tạo hồ sơ
+        if ($role === 'student') {
+            $student = Student::create([
+                'student_code' => $generatedId, // Dùng mã đã check duy nhất
+                'full_name'    => $request->name,
+                'email'        => $request->email,
+                'class_id'     => $request->class_id ?? 1,
+            ]);
+            $studentId = $student->id;
+            $qrToken = 'SV_' . Str::upper(Str::random(10));
+        } else {
+            $teacher = Teacher::create([
+                'teacher_code' => $generatedId, // Dùng mã đã check duy nhất
+                'full_name'    => $request->name,
+                'email'        => $request->email,
+            ]);
+            $teacherId = $teacher->id;
+            $qrToken = 'GV_' . Str::upper(Str::random(10));
+        }
+
+        // BƯỚC 3: Tạo User
+        $user = User::create([
+            'name'       => $request->name,
+            'email'      => $request->email,
+            'password'   => Hash::make($request->password),
+            'role'       => $role,
+            'qr_token'   => $qrToken,
+            'student_id' => $studentId,
+            'teacher_id' => $teacherId,
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Đăng ký thành công!',
+            'registration_details' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'assigned_code' => $generatedId, // Mã này giờ đã khớp hoàn toàn với DB
+                'role' => $role
+            ],
+            'access_token' => $token,
+            'token_type' => 'Bearer'
+        ], 201);
     }
 }

@@ -20,6 +20,15 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+// Route công khai
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::middleware('auth:sanctum')->group(function () {
+    // Route yêu cầu xác thực
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('sinh-vien', SinhVienController::class);
     Route::apiResource('classes', ClassController::class);
