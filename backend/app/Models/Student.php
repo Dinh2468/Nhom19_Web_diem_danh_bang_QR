@@ -2,17 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory; // Thêm HasFactory cho đúng chuẩn Laravel
 use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
-    protected $table = 'students'; // Đảm bảo đúng tên bảng
-    protected $fillable = ['student_code', 'full_name', 'email', 'class_id'];
+    use HasFactory;
 
-    // Thêm dòng này để tránh lỗi sập web do thiếu timestamps
-    public $timestamps = false;
+    protected $table = 'students';
+
+    // Các trường được phép nạp dữ liệu hàng loạt
+    protected $fillable = [
+        'student_code',
+        'full_name',
+        'email',
+        'class_id'
+    ];
+
+    public $timestamps = true;
+
+    /**
+     * Thiết lập quan hệ: Một sinh viên thuộc về một lớp học
+     */
     public function classroom()
     {
+        // Đảm bảo ClassModel là tên file model lớp học của bạn
         return $this->belongsTo(Classroom::class, 'class_id');
     }
 }
