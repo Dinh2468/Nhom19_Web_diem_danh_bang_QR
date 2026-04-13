@@ -4,59 +4,65 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Student; // Đổi từ User sang Student để lấy đúng bảng sinh viên
+use App\Models\Student;
+use Exception;
 
 class SinhVienController extends Controller
 {
-    // 1. Lấy danh sách (Read)
     public function index()
     {
-        // Sử dụng with('classroom') để lấy luôn tên lớp học từ bảng classes
-        $students = Student::with('classroom')->get();
-        return response()->json($students);
+        try {
+            $students = Student::with('classroom')->get();
+            return response()->json(['success' => true, 'data' => $students], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    // 2. Thêm mới (Create)
     public function store(Request $request)
     {
-        // Validate dữ liệu để tránh lỗi database
-        $validated = $request->validate([
-            'student_code' => 'required|unique:students',
-            'full_name'    => 'required',
-            'email'        => 'required|email|unique:students',
-            'class_id'     => 'required|exists:classes,id',
-        ]);
+        try {
+            $validated = $request->validate([
+                'student_code' => 'required|unique:students,student_code',
+                'full_name'    => 'required',
+                'email'        => 'required|email|unique:students,email',
+                'class_id'     => 'required|exists:classes,id',
+            ]);
 
-        $sv = Student::create($validated);
-
-        return response()->json([
-            'message' => 'Thêm sinh viên thành công',
-            'data' => $sv->load('classroom') // Trả về kèm thông tin lớp
-        ], 201);
+            $sv = Student::create($validated);
+            return response()->json([
+                'success' => true,
+                'message' => 'Thêm thành công',
+                'data' => $sv->load('classroom')
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
     }
 
-    // 3. Xem chi tiết (Read detail)
-    public function show($id)
-    {
-        return response()->json(Student::with('classroom')->findOrFail($id));
-    }
-
-    // 4. Cập nhật (Update)
     public function update(Request $request, $id)
     {
-        $sv = Student::findOrFail($id);
-        $sv->update($request->all());
-
-        return response()->json([
-            'message' => 'Cập nhật thành công',
-            'data' => $sv->load('classroom')
-        ]);
+        try {
+            $sv = Student::findOrFail($id);
+            $sv->update($request->all());
+            return response()->json(['success' => true, 'data' => $sv->load('classroom')]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    // 5. Xóa (Delete)
+    // --- HÀM XÓA CHUẨN ---
     public function destroy($id)
     {
-        Student::destroy($id);
-        return response()->json(['message' => 'Xóa sinh viên thành công']);
+        try {
+            $student = Student::find($id);
+            if (!$student) {
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy sinh viên'], 404);
+            }
+            $student->delete();
+            return response()->json(['success' => true, 'message' => 'Xóa thành công'], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
+        }
     }
 }

@@ -24,7 +24,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("user_token"); 
-    localStorage.removeItem("role"); // Xóa cả role nếu có lưu
+    localStorage.removeItem("role");
     alert("Bạn đã đăng xuất thành công!");
     navigate("/login");
   };
@@ -50,26 +50,30 @@ const Navbar = () => {
                 </svg>
               </button>
 
-             {isAdminOpen && (
-  <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50">
-    <Link to="/students" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition">
-      👨‍🎓 Quản lý Sinh viên
-    </Link>
-    
-    {/* THÊM MỚI Ở ĐÂY */}
-    <Link to="/classes" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition">
-      🏫 Quản lý Lớp học
-    </Link>
+              {isAdminOpen && (
+                <div className="absolute left-0 mt-1 w-64 bg-white border border-gray-100 rounded-lg shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <Link to="/students" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition">
+                    👨‍🎓 Quản lý Sinh viên
+                  </Link>
+                  
+                  <Link to="/classes" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition">
+                    🏫 Quản lý Lớp học
+                  </Link>
 
-    <Link to="/subjects" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition">
-      📚 Quản lý Môn học
-    </Link>
+                  <Link to="/subjects" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition">
+                    📚 Quản lý Môn học
+                  </Link>
 
-    <Link to="/teachers" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition border-t border-gray-50">
-      👨‍🏫 Quản lý Giáo viên
-    </Link>
-  </div>
-)}
+                  {/* MỤC MỚI CẬP NHẬT THEO DATABASE */}
+                  <Link to="/courses" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition border-t border-gray-50">
+                    🔗 Quản lý Khóa học (Lớp HP)
+                  </Link>
+
+                  <Link to="/teachers" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 font-medium transition">
+                    👨‍🏫 Quản lý Giáo viên
+                  </Link>
+                </div>
+              )}
             </div>
 
             <NavLink to="/login">Đăng Nhập</NavLink> 

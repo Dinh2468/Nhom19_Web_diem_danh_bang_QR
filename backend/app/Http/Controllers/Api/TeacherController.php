@@ -1,70 +1,64 @@
 <?php
 
-namespace App\Http\Controllers;
+// PHẢI CÓ CHỮ \Api Ở ĐÂY VÌ FILE NẰM TRONG THƯ MỤC Api
+namespace App\Http\Controllers\Api; 
 
-use App\Models\Teacher;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Exception;
+use Illuminate\Support\Facades\DB;
 
 class TeacherController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return response()->json(Teacher::all(), 200);
+        try {
+            // Dùng DB table để né lỗi cấu hình Model
+            $teachers = DB::table('teachers')->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $teachers
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi DB: ' . $e->getMessage() 
+            ], 500);
+        }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'teacher_code' => 'required|unique:teachers',
-            'full_name' => 'required',
-            'email' => 'required|email|unique:teachers'
-        ]);
-        
-        $teacher = Teacher::create($validated);
-        
-        return response()->json($teacher, 201);
+        try {
+            $id = DB::table('teachers')->insertGetId($request->all());
+            $teacher = DB::table('teachers')->where('id', $id)->first();
+            return response()->json(['success' => true, 'data' => $teacher], 201);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Teacher $teacher)
+    public function show($id)
     {
-        // Laravel đã tự tìm thấy $teacher, chỉ việc trả về thôi
-        return response()->json($teacher, 200);
+        $teacher = DB::table('teachers')->where('id', $id)->first();
+        return $teacher ? response()->json($teacher) : response()->json(['message' => 'Not found'], 404);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Teacher $teacher)
+    public function update(Request $request, $id)
     {
-       // "Hãy kiểm tra unique, nhưng bỏ qua ID của giảng viên hiện tại"
-        $validated = $request->validate([
-            'teacher_code' => 'required|unique:teachers,teacher_code,' . $teacher->id,
-            'full_name' => 'required',
-            'email' => 'required|email|unique:teachers,email,' . $teacher->id
-        ]);
-
-        $teacher->update($validated);
-        
-        return response()->json($teacher, 200);
+        try {
+            DB::table('teachers')->where('id', $id)->update($request->except(['id']));
+            $teacher = DB::table('teachers')->where('id', $id)->first();
+            return response()->json($teacher);
+        } catch (Exception $e) {
+            return response(null, 404);
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Teacher $teacher)
+    public function destroy($id)
     {
-        // Gọi hàm delete() trực tiếp
-        $teacher->delete();
-        
-        return response()->json(null, 204);
+        DB::table('teachers')->where('id', $id)->delete();
+        return response()->json(['message' => 'Deleted']);
     }
 }

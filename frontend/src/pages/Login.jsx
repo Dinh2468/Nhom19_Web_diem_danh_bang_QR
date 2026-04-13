@@ -16,29 +16,41 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // 🛠️ Kiểm tra apiUrl, nếu chưa có env thì dùng mặc định localhost:8000
-      const apiUrl = "http://127.0.0.1:8001/api";
+      // 🛠️ Đảm bảo Port 8001 này khớp với port Laravel của Vũ đang chạy nhé
+      const apiUrl = "http://127.0.0.1:8001/api"; 
       
       const response = await axios.post(`${apiUrl}/login`, {
         login_id: formData.login_id,
         password: formData.password
       });
 
-      // Lưu thông tin theo yêu cầu
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('role', response.data.role);
-      localStorage.setItem('user', JSON.stringify(response.data.user)); // Lưu thêm thông tin user để hiển thị tên
-      
-      alert("Đăng nhập thành công!");
-      
-      const role = response.data.role;
-      // Vũ điều hướng đúng theo các trang mình đã làm nhé
-      if (role === 'admin') navigate('/students');
-      else if (role === 'teacher') navigate('/teachers');
-      else navigate('/home'); // Trang dành cho Student
+      // Kiểm tra success từ Backend trả về
+      if (response.data.success) {
+        // 1. Lưu thông tin vào localStorage
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('role', response.data.role);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        alert("Đăng nhập thành công! Chào Vũ.");
+        
+        const role = response.data.role;
+        
+        // 2. Điều hướng đúng theo Role (Rất quan trọng)
+        if (role === 'admin') {
+          navigate('/students'); // Admin vào quản lý sinh viên
+        } else if (role === 'teacher') {
+          navigate('/teachers'); // Giáo viên vào quản lý giảng viên
+        } else {
+          navigate('/home'); // Sinh viên vào trang chủ hoặc trang cá nhân
+        }
+        
+        // Buộc load lại trang để cập nhật Header/Navbar nếu cần
+        window.location.reload(); 
+      }
 
     } catch (error) {
       console.error("Lỗi đăng nhập:", error.response);
+      // Lấy câu thông báo lỗi từ Backend (ví dụ: "Sai tài khoản hoặc mật khẩu")
       const msg = error.response?.data?.message || "Không thể kết nối đến máy chủ!";
       alert(msg);
     }
@@ -55,7 +67,7 @@ const Login = () => {
             </svg>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Chào mừng trở lại</h2>
-          <p className="text-sm text-gray-500">Đăng nhập để vào hệ thống điểm danh</p>
+          <p className="text-sm text-gray-500">Hệ thống quản lý sinh viên STU</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

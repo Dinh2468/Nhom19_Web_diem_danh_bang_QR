@@ -5,65 +5,108 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Subject;
 use Illuminate\Http\Request;
+use Exception;
 
 class SubjectController extends Controller
 {
-    // Lấy danh sách tất cả môn học
+    // 1. Lấy danh sách môn học
     public function index()
     {
-        return response()->json(Subject::all(), 200);
+        try {
+            $subjects = Subject::all();
+            return response()->json([
+                'success' => true,
+                'data' => $subjects
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    // Thêm môn học mới
+    // 2. Thêm môn học mới
     public function store(Request $request)
     {
-        $request->validate([
-            'subject_code' => 'required|string|max:20|unique:subjects,subject_code',
-            'subject_name' => 'required|string|max:100'
-        ]);
+        try {
+            $request->validate([
+                'subject_code' => 'required|string|max:20|unique:subjects,subject_code',
+                'subject_name' => 'required|string|max:100'
+            ]);
 
-        $subject = Subject::create($request->all());
+            $subject = Subject::create($request->all());
 
-        return response()->json([
-            'message' => 'Thêm môn học thành công!',
-            'data' => $subject
-        ], 201);
+            return response()->json([
+                'success' => true, // Thêm dòng này để React nhận diện thành công
+                'message' => 'Thêm môn học thành công!',
+                'data' => $subject
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Lỗi: ' . $e->getMessage()
+            ], 422);
+        }
     }
 
-    // Cập nhật thông tin môn học
+    // 3. Cập nhật thông tin môn học
     public function update(Request $request, $id)
     {
-        $subject = Subject::find($id);
+        try {
+            $subject = Subject::find($id);
 
-        if (!$subject) {
-            return response()->json(['message' => 'Không tìm thấy môn học!'], 404);
+            if (!$subject) {
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy môn học!'], 404);
+            }
+
+            $request->validate([
+                'subject_code' => 'required|string|max:20|unique:subjects,subject_code,' . $id,
+                'subject_name' => 'required|string|max:100'
+            ]);
+
+            $subject->update($request->all());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật môn học thành công!'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
-
-        $request->validate([
-            'subject_code' => 'required|string|max:20|unique:subjects,subject_code,' . $id,
-            'subject_name' => 'required|string|max:100'
-        ]);
-
-        $subject->update($request->all());
-
-        return response()->json(['message' => 'Cập nhật môn học thành công!'], 200);
     }
 
-    // Xóa môn học
-    public function destroy(Request $request, $id)
+    // 4. Xóa môn học
+    public function destroy($id)
     {
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Bạn không có quyền thực hiện hành động này!'], 403);
+        try {
+            $subject = Subject::find($id);
+
+            if (!$subject) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Không tìm thấy môn học!'
+                ], 404);
+            }
+
+            // Kiểm tra ràng buộc: Nếu môn học đang nằm trong bảng Course thì không cho xóa
+            // (Giả sử bạn có quan hệ courses trong Model Subject)
+            if (method_exists($subject, 'courses') && $subject->courses()->count() > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Môn học này đang có lớp học (Course), không thể xóa!'
+                ], 400);
+            }
+
+            $subject->delete();
+
+            return response()->json([
+                'success' => true, // Phải có cái này React mới chạy fetchSubjects()
+                'message' => 'Đã xóa môn học thành công!'
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Lỗi hệ thống: ' . $e->getMessage()
+            ], 500);
         }
-
-        $subject = Subject::find($id);
-
-        if (!$subject) {
-            return response()->json(['message' => 'Không tìm thấy môn học!'], 404);
-        }
-
-        $subject->delete();
-
-        return response()->json(['message' => 'Đã xóa môn học thành công!'], 200);
     }
 }

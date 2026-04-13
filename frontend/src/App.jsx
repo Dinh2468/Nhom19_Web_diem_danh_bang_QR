@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register"; 
 import ClassPage from "./pages/ClassPage";
 import SubjectPage from "./pages/SubjectPage";
+import CoursePage from "./pages/CoursePage";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/register" element={<Register />} /> 
             <Route path="/classes" element={<ClassPage />} />
             <Route path="/subjects" element={<SubjectPage />} />
+            <Route path="/courses" element={<CoursePage />} />
           </Routes>
         </main>
 
