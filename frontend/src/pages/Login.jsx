@@ -16,7 +16,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // 🛠️ Kiểm tra apiUrl, nếu chưa có env thì dùng mặc định localhost:8000
+      // Đảm bảo port 8001 khớp với lệnh 'php artisan serve --port=8001' của Vũ
       const apiUrl = "http://127.0.0.1:8001/api";
       
       const response = await axios.post(`${apiUrl}/login`, {
@@ -24,21 +24,30 @@ const Login = () => {
         password: formData.password
       });
 
-      // Lưu thông tin theo yêu cầu
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('role', response.data.role);
-      localStorage.setItem('user', JSON.stringify(response.data.user)); // Lưu thêm thông tin user để hiển thị tên
+      // Lấy dữ liệu từ object 'user' mà Đỉnh trả về trong AuthController
+      const userData = response.data.user; 
+      const token = response.data.access_token;
+      const role = userData.role; 
+
+      // 1. Lưu thông tin vào localStorage để duy trì đăng nhập
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', role);
+      localStorage.setItem('user', JSON.stringify(userData)); 
       
-      alert("Đăng nhập thành công!");
+      alert(response.data.message); // Hiển thị "Đăng nhập thành công!"
       
-      const role = response.data.role;
-      // Vũ điều hướng đúng theo các trang mình đã làm nhé
-      if (role === 'admin') navigate('/students');
-      else if (role === 'teacher') navigate('/teachers');
-      else navigate('/home'); // Trang dành cho Student
+      // 2. Điều hướng đúng theo phân quyền (Role)
+      if (role === 'admin') {
+        navigate('/students'); // Chuyển đến trang quản lý sinh viên của Vũ
+      } else if (role === 'teacher') {
+        navigate('/teachers'); // Chuyển đến giao diện giảng viên
+      } else {
+        navigate('/home'); // Trang dành cho Student
+      }
 
     } catch (error) {
       console.error("Lỗi đăng nhập:", error.response);
+      // Hiển thị lỗi từ Laravel (ví dụ: "Thông tin đăng nhập không chính xác.")
       const msg = error.response?.data?.message || "Không thể kết nối đến máy chủ!";
       alert(msg);
     }
@@ -64,8 +73,9 @@ const Login = () => {
             <input
               type="text"
               name="login_id"
+              value={formData.login_id}
               onChange={handleChange}
-              placeholder="Email hoặc mã sinh viên"
+              placeholder="Email, MSSV hoặc MSGV"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
               required
             />
@@ -76,6 +86,7 @@ const Login = () => {
             <input
               type="password"
               name="password"
+              value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all duration-200"
