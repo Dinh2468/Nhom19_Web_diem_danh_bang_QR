@@ -9,6 +9,8 @@ import HomePage from "./pages/Home";
 import StudentPage from "./pages/Student";
 import Login from "./pages/Login"; 
 import Register from "./pages/Register"; 
+import ClassPage from "./pages/ClassPage";
+import SubjectPage from "./pages/SubjectPage";
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
             <Route path="/students" element={<StudentPage />} />
             <Route path="/login" element={<Login />} /> 
             <Route path="/register" element={<Register />} /> 
+            <Route path="/classes" element={<ClassPage />} />
+            <Route path="/subjects" element={<SubjectPage />} />
           </Routes>
         </main>
 
