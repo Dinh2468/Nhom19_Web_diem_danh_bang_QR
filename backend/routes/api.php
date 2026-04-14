@@ -60,7 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/history', [AttendanceController::class, 'studentHistory']);
         Route::get('/export/{sessionId}', [AttendanceController::class, 'exportExcel']);
     });
-
+        Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
+            Route::get('/attendance/generate-token/{sessionId}', [AttendanceController::class, 'generateQRToken']);
+        });
     // ---------------------------------------------------
     // PHẦN MỚI THÊM: DASHBOARD THỐNG KÊ
     // ---------------------------------------------------
