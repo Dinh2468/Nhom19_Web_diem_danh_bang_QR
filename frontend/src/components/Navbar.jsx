@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+// Component con giữ hiệu ứng màu xanh
 const NavLink = ({ to, children }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
   return (
     <Link
       to={to}
-      className={`px-4 py-2 rounded-md transition-colors duration-200 font-medium ${
+      className={`px-4 py-2 rounded-md transition-all duration-200 font-bold ${
         isActive
           ? "bg-blue-600 text-white shadow-md"
           : "text-gray-600 hover:bg-gray-100 hover:text-blue-600"
@@ -22,67 +23,80 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
+  const token = localStorage.getItem("user_token") || localStorage.getItem("token");
+  const role = localStorage.getItem("role"); 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
   const handleLogout = () => {
-    localStorage.removeItem("user_token"); 
-    localStorage.removeItem("role"); // Xóa cả role nếu có lưu
-    alert("Bạn đã đăng xuất thành công!");
+    localStorage.clear();
     navigate("/login");
+    window.location.reload(); 
   };
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <div className="font-bold text-lg text-blue-600">QR Attendance</div>
+          
+          {/* LOGO BÊN TRÁI */}
+          <Link to={role === "teacher" ? "/teacher-dashboard" : "/home"} className="font-black text-xl text-blue-600 tracking-tighter">
+            STU ATTENDANCE
+          </Link>
 
+          {/* MENU TRUNG TÂM */}
           <div className="hidden sm:flex space-x-3 items-center">
-            <NavLink to="/home">Trang Chủ</NavLink>
             
-            <div 
-              className="relative"
-              onMouseEnter={() => setIsAdminOpen(true)}
-              onMouseLeave={() => setIsAdminOpen(false)}
-            >
-              <button className="flex items-center px-4 py-2 rounded-md text-gray-600 hover:bg-gray-100 hover:text-blue-600 transition-colors duration-200 font-medium focus:outline-none">
-                Quản Lý
-                <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ml-1 transform transition-transform ${isAdminOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
+            {/* 1. NẾU LÀ ADMIN: Hiện menu quản lý hệ thống */}
+            {token && role === "admin" && (
+              <div className="relative" onMouseEnter={() => setIsAdminOpen(true)} onMouseLeave={() => setIsAdminOpen(false)}>
+                <button className="flex items-center px-4 py-2 rounded-md text-gray-600 font-bold hover:bg-gray-100 transition-all">
+                  Quản Lý Hệ Thống
+                </button>
+                {isAdminOpen && (
+                  <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-100 rounded-lg shadow-xl py-1 z-50">
+                    <Link to="/students" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50">👨‍🎓 Sinh viên</Link>
+                    <Link to="/classes" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50">🏫 Lớp học</Link>
+                    <Link to="/subjects" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50">📚 Môn học</Link>
+                  </div>
+                )}
+              </div>
+            )}
 
-             {isAdminOpen && (
-  <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50">
-    <Link to="/students" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition">
-      👨‍🎓 Quản lý Sinh viên
-    </Link>
-    
-    {/* THÊM MỚI Ở ĐÂY */}
-    <Link to="/classes" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition">
-      🏫 Quản lý Lớp học
-    </Link>
+            {/* 2. NẾU LÀ SINH VIÊN: Hiện Trang chủ và Quét mã */}
+            {token && role === "student" && (
+              <>
+                <NavLink to="/home">Trang Chủ</NavLink>
+                <NavLink to="/scan">Điểm Danh QR</NavLink>
+              </>
+            )}
 
-    <Link to="/subjects" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition">
-      📚 Quản lý Môn học
-    </Link>
+            {/* 3. NẾU LÀ GIẢNG VIÊN (VŨ): TRỐNG TRƠN (Đã xóa hết theo ý bạn) */}
+            {/* Không thêm bất kỳ NavLink nào ở đây */}
 
-    <Link to="/teachers" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition border-t border-gray-50">
-      👨‍🏫 Quản lý Giáo viên
-    </Link>
-  </div>
-)}
-            </div>
-
-            <NavLink to="/login">Đăng Nhập</NavLink> 
-            <NavLink to="/register">Đăng Ký</NavLink> 
-            
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-md text-red-600 hover:bg-red-50 transition-colors duration-200 font-medium"
-            >
-              Đăng Xuất
-            </button>
+            {/* PHẦN THÔNG TIN TÀI KHOẢN BÊN PHẢI */}
+            {!token ? (
+              <>
+                <NavLink to="/login">Đăng Nhập</NavLink> 
+                <NavLink to="/register">Đăng Ký</NavLink> 
+              </>
+            ) : (
+              <div className="flex items-center gap-4 ml-4 border-l pl-6 border-gray-200">
+                <div className="flex flex-col items-end leading-tight">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    {role === "teacher" ? "Giảng viên" : "Thành viên"}
+                  </span>
+                  <span className="text-sm font-black text-gray-900">{user.name || "User"}</span>
+                </div>
+                
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-red-100"
+                >
+                  Thoát
+                </button>
+              </div>
+            )}
           </div>
-          <div className="sm:hidden text-gray-400 italic text-sm">Menu</div>
         </div>
       </div>
     </nav>
