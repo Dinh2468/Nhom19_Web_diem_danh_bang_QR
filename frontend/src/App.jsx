@@ -11,7 +11,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register"; 
 import ClassPage from "./pages/ClassPage";
 import SubjectPage from "./pages/SubjectPage";
-
+import Teacherpage from "./pages/Teacher"; //  Đổi tên import cho dễ nhớ
 // QUAN TRỌNG: Import file giao diện của Vũ
 import TeacherDashboard from "./pages/TeacherDashboard"; 
 
@@ -37,6 +37,8 @@ function App() {
 
             {/* SỬA LẠI ĐƯỜNG DẪN NÀY CHO KHỚP VỚI TRÌNH DUYỆT CỦA VŨ */}
             <Route path="/teachers" element={<TeacherDashboard />} />
+            { <Route path="/Teacher" element= {<Teacherpage />} />}
+
             
           </Routes>
         </main>

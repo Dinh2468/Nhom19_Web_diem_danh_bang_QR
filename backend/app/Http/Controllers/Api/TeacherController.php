@@ -1,70 +1,83 @@
 <?php
 
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
 use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class TeacherController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return response()->json(Teacher::all(), 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'teacher_code' => 'required|unique:teachers',
             'full_name' => 'required',
-            'email' => 'required|email|unique:teachers'
+            'email' => 'required|email|unique:teachers|unique:users,email'
         ]);
-        
-        $teacher = Teacher::create($validated);
-        
-        return response()->json($teacher, 201);
+
+        // Dùng Transaction để đảm bảo nếu tạo User lỗi thì Teacher cũng không được tạo
+        return DB::transaction(function () use ($validated) {
+            // 1. Tạo bản ghi Giảng viên
+            $teacher = Teacher::create($validated);
+
+            // 2. Tự động tạo tài khoản Đăng nhập (Mật khẩu mặc định là 123456)
+            User::create([
+                'name' => $validated['full_name'],
+                'email' => $validated['email'],
+                'password' => Hash::make('123456'), // Mã hóa Bcrypt
+                'role' => 'teacher',
+                'teacher_id' => $teacher->id, // Liên kết với ID vừa tạo
+            ]);
+
+            return response()->json($teacher, 201);
+        });
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Teacher $teacher)
     {
-        // Laravel đã tự tìm thấy $teacher, chỉ việc trả về thôi
         return response()->json($teacher, 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Teacher $teacher)
     {
-       // "Hãy kiểm tra unique, nhưng bỏ qua ID của giảng viên hiện tại"
         $validated = $request->validate([
             'teacher_code' => 'required|unique:teachers,teacher_code,' . $teacher->id,
             'full_name' => 'required',
             'email' => 'required|email|unique:teachers,email,' . $teacher->id
         ]);
 
-        $teacher->update($validated);
-        
-        return response()->json($teacher, 200);
+        return DB::transaction(function () use ($validated, $teacher) {
+            // Cập nhật thông tin ở bảng teachers
+            $teacher->update($validated);
+
+            // Cập nhật đồng bộ Email/Tên ở bảng users (nếu có thay đổi)
+            User::where('teacher_id', $teacher->id)->update([
+                'name' => $validated['full_name'],
+                'email' => $validated['email']
+            ]);
+
+            return response()->json($teacher, 200);
+        });
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Teacher $teacher)
     {
-        // Gọi hàm delete() trực tiếp
-        $teacher->delete();
-        
-        return response()->json(null, 204);
+        return DB::transaction(function () use ($teacher) {
+            // Xóa tài khoản login trước
+            User::where('teacher_id', $teacher->id)->delete();
+            
+            // Xóa thông tin giảng viên sau
+            $teacher->delete();
+
+            return response()->json(null, 204);
+        });
     }
 }

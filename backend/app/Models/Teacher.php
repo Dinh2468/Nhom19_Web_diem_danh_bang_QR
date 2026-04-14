@@ -14,11 +14,7 @@ class Teacher extends Model
     public $timestamps = true;
 
     // Các trường được phép nạp dữ liệu hàng loạt (đã khớp với AuthController)
-    protected $fillable = [
-        'teacher_code',
-        'full_name',
-        'email'
-    ];
+   protected $fillable = ['teacher_code', 'full_name', 'email'];
 
     /**
      * Quan hệ: Một giáo viên có thể dạy nhiều môn học/khóa học
