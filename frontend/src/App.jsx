@@ -7,6 +7,9 @@ import Navbar from "./components/Navbar";
 // Import Pages
 import HomePage from "./pages/Home";
 import StudentPage from "./pages/Student";
+import StudentDashboard from "./pages/StudentDashboard";
+import ScanQRCode from "./pages/ScanQRCode";
+import AttendanceHistory from "./pages/AttendanceHistory";
 import Login from "./pages/Login"; 
 import Register from "./pages/Register"; 
 import ClassPage from "./pages/ClassPage";
@@ -32,6 +35,9 @@ function App() {
 
             {/* Quản lý cho Admin */}
             <Route path="/students" element={<StudentPage />} />
+            <Route path="/student-dashboard" element={<StudentDashboard />} />
+            <Route path="/scan" element={<ScanQRCode />} />
+            <Route path="/attendance-history" element={<AttendanceHistory />} />
             <Route path="/classes" element={<ClassPage />} />
             <Route path="/subjects" element={<SubjectPage />} />
 

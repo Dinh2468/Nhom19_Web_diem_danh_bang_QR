@@ -39,7 +39,16 @@ const Navbar = () => {
         <div className="flex justify-between h-16 items-center">
           
           {/* LOGO BÊN TRÁI */}
-          <Link to={role === "teacher" ? "/teacher-dashboard" : "/home"} className="font-black text-xl text-blue-600 tracking-tighter">
+          <Link
+            to={
+              role === "teacher"
+                ? "/teachers"
+                : role === "student"
+                ? "/student-dashboard"
+                : "/home"
+            }
+            className="font-black text-xl text-blue-600 tracking-tighter"
+          >
             STU ATTENDANCE
           </Link>
 
@@ -62,11 +71,12 @@ const Navbar = () => {
               </div>
             )}
 
-            {/* 2. NẾU LÀ SINH VIÊN: Hiện Trang chủ và Quét mã */}
+            {/* 2. NẾU LÀ SINH VIÊN: Hiện Trang chủ, Quét QR và Lịch sử */}
             {token && role === "student" && (
               <>
-                <NavLink to="/home">Trang Chủ</NavLink>
-                <NavLink to="/scan">Điểm Danh QR</NavLink>
+                <NavLink to="/student-dashboard">Trang Chủ</NavLink>
+                <NavLink to="/scan">Quét QR</NavLink>
+                <NavLink to="/attendance-history">Lịch sử</NavLink>
               </>
             )}
 
