@@ -17,7 +17,7 @@ const Login = () => {
     e.preventDefault();
     try {
       // Đảm bảo port 8001 khớp với lệnh 'php artisan serve --port=8001' của Vũ
-      const apiUrl = "http://127.0.0.1:8001/api";
+      const apiUrl = "http://127.0.0.1:8000/api";
       
       const response = await axios.post(`${apiUrl}/login`, {
         login_id: formData.login_id,

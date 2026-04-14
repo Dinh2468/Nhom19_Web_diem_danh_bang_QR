@@ -21,7 +21,7 @@ const TeacherDashboard = () => {
     useEffect(() => {
         const fetchSubjects = async () => {
             try {
-                const res = await axios.get('http://127.0.0.1:8001/api/subjects', axiosConfig);
+                const res = await axios.get('http://127.0.0.1:8000/api/subjects', axiosConfig);
                 // Laravel thường trả về mảng trực tiếp hoặc nằm trong res.data.data
                 const data = Array.isArray(res.data) ? res.data : res.data.data;
                 setSubjects(data || []);
