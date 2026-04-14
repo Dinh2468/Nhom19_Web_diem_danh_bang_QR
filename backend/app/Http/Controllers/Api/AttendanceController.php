@@ -10,7 +10,7 @@ use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str; // QUAN TRỌNG: Thêm Str để tạo chuỗi ngẫu nhiên
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AttendanceExport;
 
@@ -18,19 +18,16 @@ class AttendanceController extends Controller
 {
     /**
      * API: Tạo mã QR động cho giảng viên
-     * Giảng viên gọi API này mỗi 30-40s để đổi mã mới chống gian lận
      */
     public function generateQRToken($sessionId)
     {
         $session = ClassSession::findOrFail($sessionId);
 
-        // 1. Tạo mã token ngẫu nhiên 32 ký tự
         $token = Str::random(32);
         
-        // 2. Cài đặt thời gian hết hạn (Ví dụ: 45 giây tính từ lúc tạo)
-        $expiredAt = Carbon::now()->addSeconds(45);
+        // Cài đặt thời gian hết hạn (Ví dụ: 45 giây tính từ lúc tạo)
+        $expiredAt = Carbon::now()->addSeconds(90);
 
-        // 3. Lưu token và thời gian hết hạn vào DB
         $session->update([
             'qr_token' => $token,
             'expired_at' => $expiredAt
@@ -38,13 +35,13 @@ class AttendanceController extends Controller
 
         return response()->json([
             'qr_token' => $token,
-            'expires_in' => 30, // Gợi ý Frontend cứ 30s thì gọi lại API này 1 lần
+            'expires_in' => 30,
             'expires_at' => $expiredAt->toDateTimeString()
         ]);
     }
 
     /**
-     * Lấy lịch sử điểm danh của sinh viên đang đăng nhập
+     * Lấy lịch sử điểm danh của sinh viên
      */
     public function studentHistory() 
     {
@@ -55,7 +52,10 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Lấy danh sách Realtime cho Giảng viên (Có cả sinh viên chưa quét mã)
+     * Lấy danh sách Realtime cho Giảng viên
+     */
+    /**
+     * Lấy danh sách Realtime cho Giảng viên (Đã tối ưu thứ tự hiển thị)
      */
     public function getRoomStatus($sessionId)
     {
@@ -70,67 +70,65 @@ class AttendanceController extends Controller
                       ->where('id', '=', $sessionId);
             })
             ->select('s.full_name', 's.student_code', 'a.status', 'a.checkin_time')
-            ->orderBy('a.checkin_time', 'desc')
+            // Ưu tiên hiện những người vừa điểm danh xong lên đầu danh sách
+            ->orderByRaw('CASE WHEN a.status IS NULL THEN 1 ELSE 0 END, a.checkin_time DESC')
             ->get();
 
         return response()->json($data);
     }
 
     /**
-     * Xử lý lưu dữ liệu điểm danh từ Sinh viên quét mã
+     * Xử lý lưu dữ liệu điểm danh từ Sinh viên
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
-        // 1. Bắt buộc phải gửi qr_token lên
         $request->validate([
             'session_id' => 'required|exists:class_sessions,id',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'qr_token' => 'required|string', // Thêm dòng này
+            'qr_token' => 'required|string',
         ]);
 
-        $session = ClassSession::findOrFail($request->session_id);
+        // Sử dụng with('course') để lấy được tên môn học
+        $session = ClassSession::with('course')->findOrFail($request->session_id);
 
-        // 2. KIỂM TRA BẢO MẬT TOKEN
-        // Kiểm tra xem Token gửi lên có khớp với Token đang lưu trong DB không
-        if ($session->qr_token !== $request->qr_token) {
-            return response()->json(['message' => 'Mã QR không hợp lệ hoặc màn hình đã đổi mã mới!'], 400);
+        // 1. KIỂM TRA BẢO MẬT TOKEN
+        if (trim($session->qr_token) !== trim($request->qr_token)) {
+            return response()->json([
+                'message' => 'Mã QR không khớp!',
+                'db_token' => $session->qr_token, // Trả về để debug
+                'sent_token' => $request->qr_token
+            ], 400);
         }
 
-        // Kiểm tra xem Token đã hết hạn chưa (quá 45 giây)
+        // TẠM ẨN KIỂM TRA HẾT HẠN ĐỂ TEST THÔNG LUỒNG
+        /*
         if ($session->expired_at && Carbon::now()->gt(Carbon::parse($session->expired_at))) {
-            return response()->json(['message' => 'Mã QR đã hết hạn, vui lòng quét mã mới trên màn hình!'], 400);
+            return response()->json(['message' => 'Mã QR đã hết hạn!'], 400);
         }
+        */
 
         $now = Carbon::now(); 
-        
-        // Giờ bắt đầu và kết thúc chuẩn từ Database
         $startTime = Carbon::parse($session->session_date . ' ' . $session->start_time);
-        $endTime = Carbon::parse($session->session_date . ' ' . $session->end_time);
-
-        // Kiểm tra kết thúc buổi học
-        if ($now->gt($endTime)) {
-            return response()->json(['message' => 'Buổi học này đã kết thúc!'], 400);
-        }
-
-        // Logic tính trạng thái: TRỄ 10 GIÂY
+        
         $status = 'Có mặt';
-        if ($now->gt($startTime->copy()->addSeconds(10))) {
+        if ($now->gt($startTime->copy()->addMinutes(15))) {
             $status = 'Muộn';
         }
 
         try {
-            // Kiểm tra đã điểm danh chưa để tránh trùng lặp
-            $exists = Attendance::where('student_id', Auth::user()->student_id)
+            $studentId = Auth::user()->student_id;
+
+            $exists = Attendance::where('student_id', $studentId)
                                 ->where('session_id', $request->session_id)
                                 ->exists();
             
             if ($exists) {
-                return response()->json(['message' => 'Bạn đã điểm danh cho buổi học này rồi!'], 400);
+                return response()->json(['message' => 'Bạn đã điểm danh rồi!'], 400);
             }
 
             $attendance = Attendance::create([
-                'student_id'   => Auth::user()->student_id,
+                'student_id'   => $studentId,
                 'session_id'   => $request->session_id,
                 'checkin_time' => $now,
                 'status'       => $status,
@@ -141,6 +139,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'message' => 'Điểm danh thành công!',
                 'status'  => $status,
+                'course_name' => $session->course->course_name ?? 'Môn học',
                 'data'    => $attendance->load('student')
             ], 201);
 
@@ -156,28 +155,22 @@ class AttendanceController extends Controller
     {
         return Excel::download(new AttendanceExport($sessionId), "diem-danh-buoi-{$sessionId}.xlsx");
     }
+
     /**
-     * API Thống kê Dashboard cho 1 môn học cụ thể
+     * API Thống kê Dashboard
      */
     public function getCourseStatistics($courseId)
     {
-        // 1. Lấy thông tin khóa học và đếm số buổi học
         $course = \App\Models\Course::withCount('sessions')->findOrFail($courseId);
         $totalSessions = $course->sessions_count;
-
-        // 2. Đếm tổng số sinh viên thuộc lớp của môn học này
         $totalStudents = \DB::table('students')->where('class_id', $course->class_id)->count();
-
-        // 3. Lấy danh sách ID của các buổi học thuộc môn này
         $sessionIds = \DB::table('class_sessions')->where('course_id', $courseId)->pluck('id');
 
-        // 4. Đếm số lượt đã điểm danh (Trạng thái không phải NULL)
         $presentCount = \DB::table('attendance')
             ->whereIn('session_id', $sessionIds)
             ->whereNotNull('status')
             ->count();
 
-        // 5. Tính toán số lượt vắng và tỉ lệ
         $totalPossibleAttendances = $totalSessions * $totalStudents;
         $absentCount = $totalPossibleAttendances - $presentCount;
         

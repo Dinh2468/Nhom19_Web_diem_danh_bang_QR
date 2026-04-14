@@ -46,6 +46,7 @@ const TeacherDashboard = () => {
         fetchSessions(selectedCourse);
     }, [selectedCourse]);
 
+    // 1. Polling Realtime SV
     useEffect(() => {
         let interval;
         if (isSessionActive && selectedSession) {
@@ -61,15 +62,21 @@ const TeacherDashboard = () => {
         return () => clearInterval(interval);
     }, [isSessionActive, selectedSession]);
 
+    // 2. Token QR Động - FIX: Chỉ chạy khi session thực sự active
     useEffect(() => {
         let qrInterval;
+        const fetchNewQRToken = async () => {
+            try {
+                const res = await axios.get(`http://127.0.0.1:8000/api/attendance/generate-token/${selectedSession}`, axiosConfig);
+                setQrCodeData(`${selectedSession}-${res.data.qr_token}`); 
+                console.log("Mã QR đã được làm mới");
+            } catch (err) {
+                console.error("Lỗi refresh QR");
+            }
+        };
+
         if (isSessionActive && selectedSession) {
-            const fetchNewQRToken = async () => {
-                try {
-                    const res = await axios.get(`http://127.0.0.1:8000/api/attendance/generate-token/${selectedSession}`, axiosConfig);
-                    setQrCodeData(`${selectedSession}-${res.data.qr_token}`); 
-                } catch (err) {}
-            };
+            // Chạy ngay lập tức khi vừa bật
             qrInterval = setInterval(fetchNewQRToken, 30000);
         }
         return () => clearInterval(qrInterval);
@@ -82,22 +89,21 @@ const TeacherDashboard = () => {
                 course_id: selectedCourse,
                 ...newSession
             }, axiosConfig);
-            
             alert("✅ Đã tạo buổi học thành công!");
             setShowCreateForm(false);
             setNewSession({ session_date: "", start_time: "", end_time: "", room: "" });
             fetchSessions(selectedCourse); 
         } catch (err) {
-            alert("❌ Lỗi khi tạo buổi học! Vui lòng nhập đủ thông tin.");
-            console.error(err);
+            alert("❌ Lỗi khi tạo buổi học!");
         }
     };
 
     const handleStart = async () => {
         if (!selectedSession) return alert("Vui lòng chọn cụ thể buổi học hôm nay!");
         try {
+            // Lấy mã đầu tiên
             const res = await axios.get(`http://127.0.0.1:8000/api/attendance/generate-token/${selectedSession}`, axiosConfig);
-            setQrCodeData(res.data.qr_token);
+            setQrCodeData(`${selectedSession}-${res.data.qr_token}`);
             setStartTime(new Date().toLocaleTimeString('vi-VN'));
             setEndTime(null);
             setIsSessionActive(true); 
@@ -105,29 +111,25 @@ const TeacherDashboard = () => {
     };
 
     const handleEnd = () => {
-        if (window.confirm("Kết thúc buổi học và xem danh sách sinh viên vắng?")) {
+        if (window.confirm("Bạn có chắc muốn kết thúc điểm danh và chốt sổ?")) {
             setEndTime(new Date().toLocaleTimeString('vi-VN'));
             setIsSessionActive(false);
             setQrCodeData("");
         }
     };
 
-    // --- TÍNH TOÁN CÁC CHỈ SỐ THỐNG KÊ REALTIME ---
     const totalStudents = attendanceList.length;
     const presentCount = attendanceList.filter(s => s.status === 'Có mặt').length;
     const lateCount = attendanceList.filter(s => s.status === 'Muộn').length;
     const absentCount = attendanceList.filter(s => s.status === null).length;
-    const scannedCount = presentCount + lateCount; // Đã quét = Có mặt + Muộn
+    const scannedCount = presentCount + lateCount; 
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6 bg-gray-50/50 min-h-screen">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* CỘT TRÁI: ĐIỀU KHIỂN & TẠO BUỔI HỌC */}
                 <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 h-fit">
                     <h2 className="text-xl font-bold mb-6 text-gray-800">📅 Thiết lập tiết dạy</h2>
                     <div className="space-y-5">
-                        
                         <div>
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">1. Chọn lớp học phần</label>
                             <select 
@@ -144,7 +146,6 @@ const TeacherDashboard = () => {
                                 {courses.map(c => <option key={c.id} value={c.id}>{c.course_name}</option>)}
                             </select>
                         </div>
-
                         <div>
                             <div className="flex justify-between items-end">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">2. Chọn buổi học</label>
@@ -172,7 +173,6 @@ const TeacherDashboard = () => {
                             </select>
                         </div>
 
-                        {/* FORM TẠO BUỔI HỌC */}
                         {showCreateForm && (
                             <form onSubmit={handleCreateSession} className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 space-y-3">
                                 <h3 className="text-xs font-bold text-indigo-800 uppercase text-center mb-2">Thêm Buổi Học Mới</h3>
@@ -214,7 +214,6 @@ const TeacherDashboard = () => {
                             </button>
                         )}
                         
-                        {/* HIỂN THỊ CHỈ SỐ THỐNG KÊ REALTIME */}
                         <div className="mt-4 p-4 bg-indigo-50/30 rounded-2xl text-[11px] space-y-3 font-bold text-gray-600 border border-indigo-50">
                             <p className="flex justify-between items-center">Tổng sĩ số: <span className="bg-white border px-2 py-1 rounded-lg text-gray-800">{totalStudents} SV</span></p>
                             <p className="flex justify-between items-center">Đã quét QR: <span className="bg-green-50 border border-green-100 px-2 py-1 rounded-lg text-green-600">{scannedCount} SV</span></p>
@@ -224,7 +223,6 @@ const TeacherDashboard = () => {
                     </div>
                 </div>
 
-                {/* CỘT PHẢI: QR & DANH SÁCH */}
                 <div className="lg:col-span-2 space-y-6">
                     {isSessionActive || endTime ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
@@ -234,27 +232,29 @@ const TeacherDashboard = () => {
                                         <span className="text-[10px] font-black text-indigo-600 mb-4 uppercase bg-indigo-50 px-3 py-1 rounded-full w-fit mx-auto">Vui lòng quét mã bên dưới</span>
                                         <div className="p-4 bg-white border-2 border-dashed border-indigo-100 rounded-3xl inline-block shadow-inner animate-pulse">
                                             {qrCodeData && (
-                                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrCodeData}`} alt="QR" className="mx-auto" />
+                                                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrCodeData}`} alt="QR Code" className="mx-auto" />
                                             )}
                                         </div>
                                     </>
                                 ) : (
                                     <div className="py-20 text-gray-400">
                                         <span className="text-6xl mb-4 block">✅</span>
-                                        <p className="font-bold text-xs uppercase tracking-widest">Buổi học kết thúc</p>
+                                        <p className="font-bold text-xs uppercase tracking-widest">Đã chốt sổ điểm danh</p>
                                     </div>
                                 )}
                             </div>
 
                             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[520px]">
                                 <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
-                                    <span className="font-bold text-gray-700 text-xs uppercase tracking-wider">{isSessionActive ? "Đang điểm danh" : "Danh sách vắng mặt"}</span>
+                                    <span className="font-bold text-gray-700 text-xs uppercase tracking-wider">
+                                        {isSessionActive ? "🟢 Đang điểm danh (Realtime)" : "📋 Bảng tổng kết chốt sổ"}
+                                    </span>
                                 </div>
                                 <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
-                                    {attendanceList.filter(item => isSessionActive ? true : item.status === null).map((item, idx) => {
+                                    {attendanceList.map((item, idx) => {
                                         const isAttended = item.status !== null;
                                         return (
-                                            <div key={idx} className={`flex items-center justify-between p-3 rounded-2xl mb-3 border ${isAttended ? 'bg-white shadow-sm' : 'bg-red-50/10'}`}>
+                                            <div key={idx} className={`flex items-center justify-between p-3 rounded-2xl mb-3 border ${isAttended ? 'bg-white shadow-sm' : 'bg-red-50/10 border-red-100'}`}>
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs text-white ${isAttended ? 'bg-indigo-600' : 'bg-red-500'}`}>
                                                         {item.full_name ? item.full_name.charAt(0) : '?'}

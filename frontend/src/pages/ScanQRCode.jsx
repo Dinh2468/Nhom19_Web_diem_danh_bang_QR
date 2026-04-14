@@ -1,226 +1,157 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { Html5Qrcode } from "html5-qrcode"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 function ScanQRCode() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const scanResultRef = useRef("");
-  const [status, setStatus] = useState("Khởi tạo camera...");
+  const [status, setStatus] = useState("Vui lòng cấp quyền Camera...");
   const [scanResult, setScanResult] = useState("");
   const [attendanceMessage, setAttendanceMessage] = useState("");
+  const [attendedCourse, setAttendedCourse] = useState(""); 
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualInput, setManualInput] = useState("");
-
+  const [cameras, setCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
+  
+  const lastScannedRef = useRef(""); 
+  const scannerRef = useRef(null);
   const token = localStorage.getItem("token") || localStorage.getItem("user_token");
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  useEffect(() => {
+    const getCameras = async () => {
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          setCameras(devices);
+          const backCam = devices.find(d => d.label.toLowerCase().includes('back'));
+          setSelectedCamera(backCam ? backCam.id : devices[0].id);
+          setStatus("Sẵn sàng quét!");
+        }
+      } catch (err) { setError("Chưa cấp quyền Camera!"); }
+    };
+    getCameras();
+    return () => stopScanning();
+  }, []);
+
+  const stopScanning = async () => {
+    if (scannerRef.current) {
+        try {
+            // Chỉ stop khi trạng thái là đang quét (2) hoặc đang chờ (1)
+            if (scannerRef.current.isScanning) {
+                await scannerRef.current.stop();
+            }
+        } catch (err) { console.warn("Dừng scanner thất bại:", err); }
+    }
+    setIsScanning(false);
+  };
+
+  const startScanning = async () => {
+    if (!selectedCamera) return;
+    setError(""); setScanResult(""); setAttendanceMessage(""); setAttendedCourse("");
+    
+    // Tạo instance mới mỗi lần bật
+    scannerRef.current = new Html5Qrcode("reader");
+
+    try {
+      await scannerRef.current.start(
+        selectedCamera,
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          if (decodedText !== lastScannedRef.current) {
+            lastScannedRef.current = decodedText;
+            setScanResult(decodedText);
+            stopScanning(); // Dừng cam ngay
+            submitAttendance(decodedText); // Gửi API
+          }
+        }
+      );
+      setIsScanning(true);
+      setStatus("Đang quét...");
+    } catch (err) { setError("Không thể bật camera."); }
+  };
 
   const getLocation = () => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        return reject(new Error("Trình duyệt không hỗ trợ định vị GPS."));
-      }
+    return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          });
-        },
-        () => {
-          reject(new Error("Không lấy được tọa độ GPS. Vui lòng cho phép định vị."));
-        },
-        { enableHighAccuracy: true, timeout: 12000 }
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve({ latitude: null, longitude: null }), // Vẫn cho điểm danh nếu lỗi GPS
+        { timeout: 5000 }
       );
     });
   };
 
   const submitAttendance = async (decoded) => {
-    if (!decoded) return;
     setIsSubmitting(true);
-    setAttendanceMessage("");
     setError("");
-
     try {
       const coords = await getLocation();
-      const payload = {
-        student_id: user.id,
-        qr_data: decoded,
-        datetime: new Date().toISOString(),
+      
+      // TÁCH MÃ CHUẨN: ID-TOKEN
+      const firstDashIndex = decoded.indexOf('-');
+      if (firstDashIndex === -1) throw new Error("Mã QR sai định dạng!");
+
+      const sessionId = decoded.substring(0, firstDashIndex);
+      const qrToken = decoded.substring(firstDashIndex + 1);
+
+      const res = await axios.post(`${API_BASE_URL}/attendance`, {
+        session_id: sessionId,
+        qr_token: qrToken,
         latitude: coords.latitude,
         longitude: coords.longitude,
-        accuracy: coords.accuracy,
-      };
-
-      await axios.post(`${API_BASE_URL}/attendance/scan`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setAttendanceMessage("Đã gửi điểm danh thành công cùng GPS.");
+      setAttendanceMessage(`✅ ${res.data.message}`);
+      setAttendedCourse(res.data.course_name);
+      setStatus("Hoàn tất!");
     } catch (err) {
-      setError(
-        err.response?.data?.message || err.message || "Không thể gửi điểm danh."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  useEffect(() => {
-    let animationId;
-    let stream;
-    let detector;
-
-    const scanFrame = async () => {
-      if (!videoRef.current || videoRef.current.readyState !== 4) {
-        animationId = requestAnimationFrame(scanFrame);
-        return;
-      }
-
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      try {
-        const barcodes = await detector.detect(canvas);
-        if (barcodes && barcodes.length > 0) {
-          const decodedText = barcodes[0].rawValue;
-          if (decodedText !== scanResultRef.current) {
-            scanResultRef.current = decodedText;
-            setScanResult(decodedText);
-            setStatus("Đã quét mã QR thành công.");
-            submitAttendance(decodedText);
-          }
-        }
-      } catch (err) {
-        if (videoRef.current && videoRef.current.readyState === 4) {
-          setError("Không đọc được mã QR. Hãy thử lại hoặc dùng trình duyệt khác.");
-        }
-      }
-
-      animationId = requestAnimationFrame(scanFrame);
-    };
-
-    const initScanner = async () => {
-      if (!("BarcodeDetector" in window)) {
-        setStatus("Trình duyệt hiện tại chưa hỗ trợ đọc QR trực tiếp.");
-        setError("Vui lòng dùng Chrome hoặc Edge mới nhất.");
-        return;
-      }
-
-      const supportedFormats = await window.BarcodeDetector.getSupportedFormats();
-      if (!supportedFormats.includes("qr_code")) {
-        setStatus("BarcodeDetector chưa hỗ trợ QR code trên trình duyệt này.");
-        setError("Vui lòng dùng Chrome hoặc Edge mới nhất.");
-        return;
-      }
-
-      detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setStatus("Camera đã sẵn sàng. Hướng vào mã QR để quét.");
-        scanFrame();
-      } catch (err) {
-        setError("Không thể mở camera. Vui lòng kiểm tra quyền truy cập camera.");
-        setStatus("Camera không khả dụng.");
-      }
-    };
-
-    initScanner();
-
-    return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
-
-  const handleManualSubmit = async () => {
-    if (!manualInput.trim()) return;
-    setScanResult(manualInput.trim());
-    setStatus("Đang gửi dữ liệu mã QR thủ công...");
-    await submitAttendance(manualInput.trim());
+      setError(err.response?.data?.message || "Lỗi gửi dữ liệu");
+      lastScannedRef.current = ""; // Cho phép quét lại
+    } finally { setIsSubmitting(false); }
   };
 
   return (
-    <div className="space-y-8 py-10 min-h-[70vh]">
-      <div className="rounded-3xl border border-gray-100 bg-white p-10 shadow-xl shadow-gray-200/40">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-indigo-600 font-bold">Quét QR điểm danh</p>
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mt-3">Mở camera, quét mã và gửi điểm danh</h1>
-            <p className="mt-4 max-w-2xl text-gray-500 leading-relaxed">
-              Camera quét mã QR được tích hợp trực tiếp. Sau khi giải mã, hệ thống sẽ lấy tọa độ GPS từ trình duyệt và gửi kèm API điểm danh.
-            </p>
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+        <h1 className="text-3xl font-black text-gray-800 mb-2">Quét mã điểm danh</h1>
+        {attendedCourse && (
+          <div className="bg-green-50 text-green-700 p-3 rounded-xl font-bold border border-green-100 animate-pulse">
+            📖 Môn học: {attendedCourse}
           </div>
-          <div className="rounded-3xl bg-indigo-600 px-6 py-5 text-white shadow-lg shadow-indigo-200/30">
-            <p className="text-xs uppercase tracking-[0.3em] text-indigo-100">Trạng thái</p>
-            <p className="mt-3 text-3xl font-black">{status}</p>
+        )}
+        
+        <div className="grid lg:grid-cols-2 gap-8 mt-6">
+          <div className="space-y-4">
+             <div id="reader" className="overflow-hidden rounded-2xl bg-black min-h-[300px]"></div>
+             <div className="flex gap-2">
+                <select className="flex-1 p-2 bg-gray-50 border rounded-lg font-bold" 
+                  value={selectedCamera} onChange={e => setSelectedCamera(e.target.value)}>
+                  {cameras.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+                <button onClick={isScanning ? stopScanning : startScanning} 
+                  className={`px-6 py-2 rounded-lg font-bold text-white ${isScanning ? 'bg-red-500' : 'bg-indigo-600'}`}>
+                  {isScanning ? "TẮT CAM" : "BẬT CAM"}
+                </button>
+             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Camera quét QR</h2>
-          <div className="overflow-hidden rounded-3xl border border-dashed border-gray-200 bg-black/5">
-            <video ref={videoRef} className="w-full min-h-[320px] bg-black" playsInline muted />
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-3xl bg-gray-50 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-gray-400">Kết quả quét</p>
-              <p className="mt-2 font-bold text-gray-900 break-all">{scanResult || "Chưa có dữ liệu"}</p>
+          <div className="space-y-4 bg-gray-50 p-6 rounded-2xl border border-dashed">
+            <h3 className="font-bold text-gray-400 uppercase text-xs">Kết quả</h3>
+            <p className="text-sm font-medium text-gray-600">Trạng thái: <span className="text-indigo-600 font-bold">{status}</span></p>
+            {attendanceMessage && <p className="text-green-600 font-black">{attendanceMessage}</p>}
+            {error && <p className="text-red-500 font-bold">⚠️ {error}</p>}
+            
+            <div className="pt-4 border-t">
+               <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Nhập mã thủ công</p>
+               <textarea className="w-full p-3 text-sm rounded-xl border" rows="3" 
+                 value={manualInput} onChange={e => setManualInput(e.target.value)} placeholder="Dán mã vào đây..."></textarea>
+               <button onClick={() => submitAttendance(manualInput)} disabled={!manualInput}
+                 className="w-full mt-2 bg-gray-800 text-white py-2 rounded-lg font-bold disabled:opacity-50">GỬI MÃ</button>
             </div>
-            <div className="rounded-3xl bg-gray-50 p-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-gray-400">Thông báo gửi</p>
-              <p className="mt-2 font-semibold text-gray-900">{attendanceMessage || "Chưa gửi"}</p>
-            </div>
-          </div>
-          {error && (
-            <div className="mt-5 rounded-3xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Nếu camera không hoạt động</h2>
-          <p className="text-gray-500 leading-relaxed mb-4">
-            Bạn cũng có thể dán nội dung mã QR thủ công nếu trình duyệt chưa hỗ trợ quét mã QR trực tiếp.
-          </p>
-          <textarea
-            rows={5}
-            value={manualInput}
-            onChange={(e) => setManualInput(e.target.value)}
-            placeholder="Dán dữ liệu mã QR vào đây"
-            className="w-full rounded-3xl border border-gray-200 bg-gray-50 p-4 text-sm outline-none focus:border-indigo-500"
-          />
-          <button
-            disabled={isSubmitting}
-            onClick={handleManualSubmit}
-            className="mt-4 w-full rounded-2xl bg-indigo-600 px-5 py-3 text-white font-bold transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Gửi thủ công
-          </button>
-          <div className="mt-6 rounded-3xl bg-indigo-50 p-4 text-sm text-indigo-700">
-            <p className="font-semibold">Lưu ý</p>
-            <p className="mt-2 text-gray-600">
-              Nếu trình duyệt không hỗ trợ `BarcodeDetector`, hãy chuyển sang Chrome/Edge mới nhất và bật quyền camera.
-            </p>
           </div>
         </div>
       </div>
