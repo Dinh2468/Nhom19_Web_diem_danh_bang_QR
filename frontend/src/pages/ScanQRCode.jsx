@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { Html5Qrcode } from "html5-qrcode";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 function ScanQRCode() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
   const scanResultRef = useRef("");
   const [status, setStatus] = useState("Khởi tạo camera...");
   const [scanResult, setScanResult] = useState("");
@@ -13,6 +12,9 @@ function ScanQRCode() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualInput, setManualInput] = useState("");
+  
+  // State mới quản lý trạng thái quét: 'idle' | 'success' | 'error'
+  const [scanStatus, setScanStatus] = useState("idle");
 
   const token = localStorage.getItem("token") || localStorage.getItem("user_token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -30,130 +32,167 @@ function ScanQRCode() {
             accuracy: position.coords.accuracy,
           });
         },
-        () => {
-          reject(new Error("Không lấy được tọa độ GPS. Vui lòng cho phép định vị."));
+        (err) => {
+          console.error("Lỗi GPS:", err);
+          reject(new Error("Không lấy được tọa độ GPS. Vui lòng bật vị trí trên điện thoại."));
         },
-        { enableHighAccuracy: true, timeout: 12000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
   };
 
-  const submitAttendance = async (decoded) => {
-    if (!decoded) return;
+  const submitAttendance = async (decodedText) => {
+    if (!decodedText) return;
     setIsSubmitting(true);
     setAttendanceMessage("");
     setError("");
 
     try {
+      setStatus("Đang xử lý dữ liệu...");
+      
+      // 1. Phân tích mã QR để lấy ra session_id do Giảng viên tạo
+      let sessionId = "";
+      try {
+          const parsed = JSON.parse(decodedText);
+          sessionId = parsed.session_id; // Lấy session_id từ JSON
+      } catch(e) {
+          // Nếu mã quét thủ công không phải JSON thì lấy thẳng chuỗi gốc
+          sessionId = decodedText; 
+      }
+
       const coords = await getLocation();
+      
+      setStatus("Đang gửi lên Server...");
+      
+      // 2. Gói dữ liệu đúng chuẩn Backend yêu cầu
       const payload = {
-        student_id: user.id,
-        qr_data: decoded,
-        datetime: new Date().toISOString(),
+        session_id: sessionId,
         latitude: coords.latitude,
         longitude: coords.longitude,
-        accuracy: coords.accuracy,
       };
 
-      await axios.post(`${API_BASE_URL}/attendance/scan`, payload, {
+      // 3. Đổi route gọi API thành /attendance (Bỏ chữ /scan đi)
+      await axios.post(`${API_BASE_URL}/attendance`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setAttendanceMessage("Đã gửi điểm danh thành công cùng GPS.");
+      // --- NẾU THÀNH CÔNG ---
+      setStatus("Điểm danh hoàn tất!");
+      setScanStatus("success"); 
+      setAttendanceMessage("Điểm danh thành công!");
+      
+      setTimeout(() => {
+        setScanStatus("idle");
+        scanResultRef.current = ""; 
+      }, 3000);
+
     } catch (err) {
-      setError(
-        err.response?.data?.message || err.message || "Không thể gửi điểm danh."
-      );
+      // --- NẾU LỖI HOẶC QUÁ HẠN ---
+      setStatus("Điểm danh thất bại.");
+      setScanStatus("error"); 
+      
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([200, 100, 200]);
+      }
+
+      // Backend trả về message lỗi cụ thể (VD: "Buổi học đã kết thúc", "Bạn đã điểm danh rồi")
+      const apiErrorMsg = err.response?.data?.message;
+      setError(apiErrorMsg || "Mã không hợp lệ hoặc đã quá hạn sử dụng.");
+      
+      setTimeout(() => {
+        setScanStatus("idle");
+        scanResultRef.current = ""; 
+      }, 3000);
+
     } finally {
       setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    let animationId;
-    let stream;
-    let detector;
+    let isMounted = true;
+    let html5QrCode = null;
 
-    const scanFrame = async () => {
-      if (!videoRef.current || videoRef.current.readyState !== 4) {
-        animationId = requestAnimationFrame(scanFrame);
-        return;
-      }
+    const readerElement = document.getElementById("reader");
+    if (readerElement) {
+      readerElement.innerHTML = "";
+    }
 
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+    const startScanner = async () => {
       try {
-        const barcodes = await detector.detect(canvas);
-        if (barcodes && barcodes.length > 0) {
-          const decodedText = barcodes[0].rawValue;
-          if (decodedText !== scanResultRef.current) {
-            scanResultRef.current = decodedText;
-            setScanResult(decodedText);
-            setStatus("Đã quét mã QR thành công.");
-            submitAttendance(decodedText);
+        html5QrCode = new Html5Qrcode("reader");
+        await html5QrCode.start(
+          { facingMode: "environment" }, 
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText) => {
+            if (decodedText !== scanResultRef.current) {
+              // Rung nhẹ khi vừa bắt được mã
+              if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(100);
+              }
+              
+              // Chuyển viền sang xanh lá tạm thời để báo hiệu đã đọc được mã
+              setScanStatus("success");
+
+              scanResultRef.current = decodedText;
+              setScanResult(decodedText);
+              submitAttendance(decodedText);
+            }
+          },
+          (errorMessage) => {
+            // Đang tìm mã... (bỏ qua)
           }
+        );
+        
+        if (isMounted) {
+          setStatus("Camera đã sẵn sàng. Hướng vào mã QR để quét.");
+          setError(""); 
         }
       } catch (err) {
-        if (videoRef.current && videoRef.current.readyState === 4) {
-          setError("Không đọc được mã QR. Hãy thử lại hoặc dùng trình duyệt khác.");
+        if (isMounted) {
+          setError("Không thể mở camera. Vui lòng kiểm tra quyền hoặc tải lại trang.");
+          setStatus("Camera không khả dụng.");
         }
-      }
-
-      animationId = requestAnimationFrame(scanFrame);
-    };
-
-    const initScanner = async () => {
-      if (!("BarcodeDetector" in window)) {
-        setStatus("Trình duyệt hiện tại chưa hỗ trợ đọc QR trực tiếp.");
-        setError("Vui lòng dùng Chrome hoặc Edge mới nhất.");
-        return;
-      }
-
-      const supportedFormats = await window.BarcodeDetector.getSupportedFormats();
-      if (!supportedFormats.includes("qr_code")) {
-        setStatus("BarcodeDetector chưa hỗ trợ QR code trên trình duyệt này.");
-        setError("Vui lòng dùng Chrome hoặc Edge mới nhất.");
-        return;
-      }
-
-      detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setStatus("Camera đã sẵn sàng. Hướng vào mã QR để quét.");
-        scanFrame();
-      } catch (err) {
-        setError("Không thể mở camera. Vui lòng kiểm tra quyền truy cập camera.");
-        setStatus("Camera không khả dụng.");
       }
     };
 
-    initScanner();
+    const timerId = setTimeout(() => {
+      if (isMounted) startScanner();
+    }, 200);
 
     return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      isMounted = false; 
+      clearTimeout(timerId); 
+
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+        }).catch((err) => console.error("Lỗi tắt cam:", err));
       }
     };
   }, []);
 
   const handleManualSubmit = async () => {
     if (!manualInput.trim()) return;
+    setScanStatus("success"); // Đổi màu viền khi bấm gửi
     setScanResult(manualInput.trim());
-    setStatus("Đang gửi dữ liệu mã QR thủ công...");
     await submitAttendance(manualInput.trim());
   };
+
+  // Xác định class CSS cho khung viền dựa vào state
+  let borderClass = "border-gray-300 border-dashed";
+  if (scanStatus === "success") borderClass = "border-green-500 border-solid shadow-[0_0_20px_rgba(34,197,94,0.5)]";
+  if (scanStatus === "error") borderClass = "border-red-500 border-solid shadow-[0_0_20px_rgba(239,68,68,0.5)]";
+
+  // Xác định class CSS cho màu chữ kết quả
+  let textClass = "text-gray-900";
+  if (scanStatus === "success") textClass = "text-green-600";
+  if (scanStatus === "error") textClass = "text-red-600";
 
   return (
     <div className="space-y-8 py-10 min-h-[70vh]">
@@ -168,7 +207,7 @@ function ScanQRCode() {
           </div>
           <div className="rounded-3xl bg-indigo-600 px-6 py-5 text-white shadow-lg shadow-indigo-200/30">
             <p className="text-xs uppercase tracking-[0.3em] text-indigo-100">Trạng thái</p>
-            <p className="mt-3 text-3xl font-black">{status}</p>
+            <p className="mt-3 text-2xl font-black">{status}</p>
           </div>
         </div>
       </div>
@@ -176,22 +215,31 @@ function ScanQRCode() {
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
         <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Camera quét QR</h2>
-          <div className="overflow-hidden rounded-3xl border border-dashed border-gray-200 bg-black/5">
-            <video ref={videoRef} className="w-full min-h-[320px] bg-black" playsInline muted />
-            <canvas ref={canvasRef} className="hidden" />
+          
+          {/* Khung Camera với viền đổi màu động */}
+          <div className={`overflow-hidden rounded-2xl border-[3px] relative bg-black flex justify-center items-center transition-all duration-300 ${borderClass}`}>
+            <div id="reader" className="w-full"></div>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <div className="rounded-3xl bg-gray-50 p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-gray-400">Kết quả quét</p>
-              <p className="mt-2 font-bold text-gray-900 break-all">{scanResult || "Chưa có dữ liệu"}</p>
+              <p className={`mt-2 font-bold break-all transition-colors duration-300 ${textClass}`}>
+                {scanResult || "Chưa có dữ liệu"}
+              </p>
             </div>
             <div className="rounded-3xl bg-gray-50 p-4">
               <p className="text-xs uppercase tracking-[0.25em] text-gray-400">Thông báo gửi</p>
-              <p className="mt-2 font-semibold text-gray-900">{attendanceMessage || "Chưa gửi"}</p>
+              <p className={`mt-2 font-semibold transition-colors duration-300 ${scanStatus === 'error' ? 'text-red-600' : 'text-gray-900'}`}>
+                {attendanceMessage || (scanStatus === 'error' ? 'Gửi thất bại' : 'Chưa gửi')}
+              </p>
             </div>
           </div>
           {error && (
-            <div className="mt-5 rounded-3xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+            <div className="mt-5 rounded-3xl border border-red-100 bg-red-50 p-4 text-sm text-red-700 font-medium flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
               {error}
             </div>
           )}
@@ -216,12 +264,6 @@ function ScanQRCode() {
           >
             Gửi thủ công
           </button>
-          <div className="mt-6 rounded-3xl bg-indigo-50 p-4 text-sm text-indigo-700">
-            <p className="font-semibold">Lưu ý</p>
-            <p className="mt-2 text-gray-600">
-              Nếu trình duyệt không hỗ trợ `BarcodeDetector`, hãy chuyển sang Chrome/Edge mới nhất và bật quyền camera.
-            </p>
-          </div>
         </div>
       </div>
     </div>

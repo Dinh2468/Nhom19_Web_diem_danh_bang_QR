@@ -55,7 +55,13 @@ const TeacherDashboard = () => {
         const now = new Date();
         setStartTime(now.toLocaleTimeString('vi-VN'));
         setEndTime(null);
-        setQrCodeData(`STU_QR_${selectedSubject}_${now.getTime()}`);
+        
+        // --- ĐÃ SỬA ---
+        // Thay vì tạo chuỗi ngẫu nhiên, ta tạo JSON chứa đúng session_id mà Backend cần
+        const qrPayload = JSON.stringify({ session_id: selectedSubject });
+        setQrCodeData(qrPayload);
+        // --------------
+        
         setIsSessionActive(true);
     };
 
