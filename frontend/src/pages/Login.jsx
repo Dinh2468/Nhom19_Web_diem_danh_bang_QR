@@ -42,7 +42,7 @@ const Login = () => {
       } else if (role === 'teacher') {
         navigate('/teachers'); // Chuyển đến giao diện giảng viên
       } else {
-        navigate('/home'); // Trang dành cho Student
+        navigate('/student-dashboard'); // Trang dành cho Student
       }
 
     } catch (error) {
