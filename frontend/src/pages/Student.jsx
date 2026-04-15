@@ -18,7 +18,12 @@ function StudentPage() {
   // Hàm lấy Header tự động (Tránh lỗi 401/trắng trang nếu API yêu cầu Token)
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return token
+      ? {
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "69420", // Thêm dòng này
+        }
+      : { "ngrok-skip-browser-warning": "69420" };
   };
 
   // 1. Lấy danh sách sinh viên

@@ -121,7 +121,10 @@ function ScanQRCode() {
           longitude: coords.longitude,
         },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "69420", // Thêm dòng này
+          },
         },
       );
 

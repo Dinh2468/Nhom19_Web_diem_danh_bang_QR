@@ -23,7 +23,12 @@ function CoursePage() {
 
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return token
+      ? {
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "69420", // Thêm dòng này
+        }
+      : { "ngrok-skip-browser-warning": "69420" };
   };
 
   // 1. Lấy danh sách Khóa học

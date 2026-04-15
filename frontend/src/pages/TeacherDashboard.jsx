@@ -26,18 +26,23 @@ const TeacherDashboard = () => {
 
   const token =
     localStorage.getItem("token") || localStorage.getItem("user_token");
-  const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
+  const axiosConfig = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "ngrok-skip-browser-warning": "69420", // THÊM DÒNG NÀY
+    },
+  };
 
   const fetchSessions = async (courseId) => {
     if (!courseId) return setSessions([]);
     try {
       const res = await axios.get(
         `${Class_API_URL}?course_id=${courseId}`,
-        axiosConfig,
+        axiosConfig, // Đảm bảo đã có axiosConfig ở đây
       );
       setSessions(res.data || []);
     } catch (err) {
-      console.error("Lỗi lấy danh sách buổi học:", err);
+      console.error(err);
     }
   };
 
@@ -65,8 +70,8 @@ const TeacherDashboard = () => {
       const fetchAttendanceRealtime = async () => {
         try {
           const res = await axios.get(
-            `${ATTENDANCE_API_URL}/session/${selectedSession}`,
-            axiosConfig,
+            `${ATTENDANCE_API_URL}/generate-token/${selectedSession}`,
+            axiosConfig, // THÊM axiosConfig VÀO ĐÂY
           );
           setAttendanceList(res.data || []);
         } catch (err) {}

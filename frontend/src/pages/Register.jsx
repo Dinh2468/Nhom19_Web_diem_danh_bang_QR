@@ -26,13 +26,19 @@ const Register = () => {
 
     try {
       // Gửi yêu cầu Đăng ký xuống Backend (Cổng 8001)
-      const response = await axios.post(Regis_API_URL, {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        password_confirmation: formData.password_confirmation, // Laravel bắt buộc trường này để dùng validation 'confirmed'
-        role: formData.role,
-      });
+      const response = await axios.post(
+        Regis_API_URL,
+        {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          password_confirmation: formData.password_confirmation, // Laravel bắt buộc trường này để dùng validation 'confirmed'
+          role: formData.role,
+        },
+        {
+          headers: { "ngrok-skip-browser-warning": "69420" },
+        },
+      );
 
       if (response.status === 200 || response.status === 201) {
         // Lấy mã số SV/GV mà hệ thống tự sinh ra từ response của Đỉnh

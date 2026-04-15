@@ -14,7 +14,10 @@ function ClassPage() {
   const getAuthHeader = () => {
     const token = localStorage.getItem("token"); // Lấy token từ lúc login
     return {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "ngrok-skip-browser-warning": "69420", // Thêm dòng này
+      },
     };
   };
 

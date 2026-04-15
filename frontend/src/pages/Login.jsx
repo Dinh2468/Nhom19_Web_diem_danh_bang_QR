@@ -21,10 +21,16 @@ const Login = () => {
       // Đảm bảo port 8001 khớp với lệnh 'php artisan serve --port=8001' của Vũ
       const apiUrl = BASE_URL;
 
-      const response = await axios.post(`${apiUrl}/login`, {
-        login_id: formData.login_id,
-        password: formData.password,
-      });
+      const response = await axios.post(
+        `${apiUrl}/login`,
+        {
+          login_id: formData.login_id,
+          password: formData.password,
+        },
+        {
+          headers: { "ngrok-skip-browser-warning": "69420" },
+        },
+      );
 
       // Lấy dữ liệu từ object 'user' mà Đỉnh trả về trong AuthController
       const userData = response.data.user;

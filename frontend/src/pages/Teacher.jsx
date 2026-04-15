@@ -21,7 +21,10 @@ const Teacher = () => {
 
   // Cấu hình axios gửi kèm token
   const axiosConfig = {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "ngrok-skip-browser-warning": "69420", // THÊM DÒNG NÀY
+    },
   };
 
   const fetchTeachers = async () => {

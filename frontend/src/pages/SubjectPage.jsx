@@ -12,7 +12,12 @@ function SubjectPage() {
 
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
-    return { headers: { Authorization: `Bearer ${token}` } };
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "ngrok-skip-browser-warning": "69420", // Thêm dòng này
+      },
+    };
   };
 
   const fetchSubjects = useCallback(() => {
