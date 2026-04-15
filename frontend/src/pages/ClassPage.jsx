@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = "https://asyllabic-emelina-uncheated.ngrok-free.dev/api";
 const CLASS_API_URL = `${BASE_URL}/classes`;
 
 function ClassPage() {
@@ -29,7 +29,8 @@ function ClassPage() {
       })
       .catch((err) => {
         console.error("Lỗi lấy danh sách lớp:", err);
-        if (err.response?.status === 401) alert("Hết hạn đăng nhập, hãy login lại!");
+        if (err.response?.status === 401)
+          alert("Hết hạn đăng nhập, hãy login lại!");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -55,7 +56,11 @@ function ClassPage() {
   const updateClass = (id) => {
     const cls = classes.find((item) => item.id === id);
     axios
-      .put(`${CLASS_API_URL}/${id}`, { class_name: cls.class_name }, getAuthHeader()) // Thêm header
+      .put(
+        `${CLASS_API_URL}/${id}`,
+        { class_name: cls.class_name },
+        getAuthHeader(),
+      ) // Thêm header
       .then(() => {
         setEditingId(null);
         alert("Cập nhật thành công!");
@@ -66,7 +71,9 @@ function ClassPage() {
 
   const handleInputChange = (id, value) => {
     setClasses(
-      classes.map((cls) => (cls.id === id ? { ...cls, class_name: value } : cls))
+      classes.map((cls) =>
+        cls.id === id ? { ...cls, class_name: value } : cls,
+      ),
     );
   };
 
@@ -88,16 +95,25 @@ function ClassPage() {
       {/* HEADER */}
       <div className="relative flex items-center justify-between border-b border-gray-100 pb-5">
         <div>
-          <h2 className="text-3xl font-extrabold text-gray-900">Quản lý Lớp học</h2>
-          <p className="text-sm text-gray-500 mt-1">Admin / Quản lý danh sách lớp học hệ thống</p>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Quản lý Lớp học
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Admin / Quản lý danh sách lớp học hệ thống
+          </p>
         </div>
       </div>
 
       {/* FORM THÊM LỚP */}
       <section className="relative bg-white/90 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/30">
-        <form onSubmit={addClass} className="flex flex-col md:flex-row gap-4 items-end">
+        <form
+          onSubmit={addClass}
+          className="flex flex-col md:flex-row gap-4 items-end"
+        >
           <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Tên lớp học</label>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Tên lớp học
+            </label>
             <input
               placeholder="Ví dụ: D22_TH15"
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm"
@@ -106,7 +122,10 @@ function ClassPage() {
               required
             />
           </div>
-          <button type="submit" className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl transition-all text-sm shadow-lg shadow-indigo-200">
+          <button
+            type="submit"
+            className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl transition-all text-sm shadow-lg shadow-indigo-200"
+          >
             Thêm mới lớp
           </button>
         </form>
@@ -125,34 +144,74 @@ function ClassPage() {
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
               {loading ? (
-                <tr><td colSpan="3" className="text-center py-10 text-gray-400">Đang tải dữ liệu lớp học...</td></tr>
+                <tr>
+                  <td colSpan="3" className="text-center py-10 text-gray-400">
+                    Đang tải dữ liệu lớp học...
+                  </td>
+                </tr>
               ) : classes.length === 0 ? (
-                <tr><td colSpan="3" className="text-center py-10 text-gray-400 font-medium">Chưa có lớp học nào được tìm thấy.</td></tr>
+                <tr>
+                  <td
+                    colSpan="3"
+                    className="text-center py-10 text-gray-400 font-medium"
+                  >
+                    Chưa có lớp học nào được tìm thấy.
+                  </td>
+                </tr>
               ) : (
                 classes.map((cls) => (
-                  <tr key={cls.id} className="hover:bg-indigo-50/30 transition-colors">
-                    <td className="px-6 py-4 font-bold text-indigo-600">#{cls.id}</td>
+                  <tr
+                    key={cls.id}
+                    className="hover:bg-indigo-50/30 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-bold text-indigo-600">
+                      #{cls.id}
+                    </td>
                     <td className="px-6 py-4">
                       {editingId === cls.id ? (
                         <input
                           className="w-full px-3 py-2 border border-indigo-300 rounded-lg outline-none text-sm focus:ring-2 focus:ring-indigo-200"
                           value={cls.class_name}
-                          onChange={(e) => handleInputChange(cls.id, e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange(cls.id, e.target.value)
+                          }
                         />
                       ) : (
-                        <span className="font-semibold text-gray-800">{cls.class_name}</span>
+                        <span className="font-semibold text-gray-800">
+                          {cls.class_name}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {editingId === cls.id ? (
                         <div className="flex justify-center gap-3">
-                          <button onClick={() => updateClass(cls.id)} className="bg-green-100 text-green-700 px-3 py-1 rounded-md text-xs font-bold hover:bg-green-200">Lưu</button>
-                          <button onClick={() => setEditingId(null)} className="bg-gray-100 text-gray-500 px-3 py-1 rounded-md text-xs font-bold hover:bg-gray-200">Hủy</button>
+                          <button
+                            onClick={() => updateClass(cls.id)}
+                            className="bg-green-100 text-green-700 px-3 py-1 rounded-md text-xs font-bold hover:bg-green-200"
+                          >
+                            Lưu
+                          </button>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="bg-gray-100 text-gray-500 px-3 py-1 rounded-md text-xs font-bold hover:bg-gray-200"
+                          >
+                            Hủy
+                          </button>
                         </div>
                       ) : (
                         <div className="flex justify-center gap-4">
-                          <button onClick={() => setEditingId(cls.id)} className="text-indigo-600 hover:text-indigo-800 font-bold transition-transform hover:scale-110">Sửa</button>
-                          <button onClick={() => deleteClass(cls.id)} className="text-red-500 hover:text-red-700 font-bold transition-transform hover:scale-110">Xóa</button>
+                          <button
+                            onClick={() => setEditingId(cls.id)}
+                            className="text-indigo-600 hover:text-indigo-800 font-bold transition-transform hover:scale-110"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => deleteClass(cls.id)}
+                            className="text-red-500 hover:text-red-700 font-bold transition-transform hover:scale-110"
+                          >
+                            Xóa
+                          </button>
                         </div>
                       )}
                     </td>

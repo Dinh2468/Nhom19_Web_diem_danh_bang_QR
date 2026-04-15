@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = "https://asyllabic-emelina-uncheated.ngrok-free.dev/api";
 const STUDENT_API_URL = `${BASE_URL}/sinh-vien`;
 const CLASS_API_URL = `${BASE_URL}/classes`;
 
@@ -53,14 +53,21 @@ function StudentPage() {
     if (!classId) return alert("Vui lòng chọn lớp học!");
 
     axios
-      .post(STUDENT_API_URL, {
-        full_name: fullName,
-        email: email,
-        student_code: studentCode,
-        class_id: classId,
-      }, { headers: getAuthHeader() })
+      .post(
+        STUDENT_API_URL,
+        {
+          full_name: fullName,
+          email: email,
+          student_code: studentCode,
+          class_id: classId,
+        },
+        { headers: getAuthHeader() },
+      )
       .then(() => {
-        setFullName(""); setEmail(""); setStudentCode(""); setClassId("");
+        setFullName("");
+        setEmail("");
+        setStudentCode("");
+        setClassId("");
         fetchStudents();
         alert("Thêm thành công!");
       })
@@ -71,11 +78,15 @@ function StudentPage() {
   const updateStudent = (id) => {
     const sv = students.find((item) => item.id === id);
     axios
-      .put(`${STUDENT_API_URL}/${id}`, {
-        full_name: sv.full_name,
-        email: sv.email,
-        class_id: sv.class_id,
-      }, { headers: getAuthHeader() })
+      .put(
+        `${STUDENT_API_URL}/${id}`,
+        {
+          full_name: sv.full_name,
+          email: sv.email,
+          class_id: sv.class_id,
+        },
+        { headers: getAuthHeader() },
+      )
       .then(() => {
         setEditingId(null);
         alert("Cập nhật thành công!");
@@ -85,17 +96,18 @@ function StudentPage() {
   };
 
   const handleInputChange = (id, field, value) => {
-    setStudents(prev =>
-      prev.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv))
+    setStudents((prev) =>
+      prev.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv)),
     );
   };
 
   // 5. Xóa sinh viên
   const deleteStudent = (id) => {
     if (window.confirm("Bạn chắc chắn muốn xóa sinh viên này?")) {
-      axios.delete(`${STUDENT_API_URL}/${id}`, { headers: getAuthHeader() })
+      axios
+        .delete(`${STUDENT_API_URL}/${id}`, { headers: getAuthHeader() })
         .then(() => fetchStudents())
-        .catch(err => console.error("Lỗi xóa:", err));
+        .catch((err) => console.error("Lỗi xóa:", err));
     }
   };
 
@@ -108,12 +120,26 @@ function StudentPage() {
       {/* HEADER */}
       <div className="relative flex items-center justify-between border-b border-gray-100 pb-5">
         <div>
-          <h2 className="text-3xl font-extrabold text-gray-900">Quản lý Sinh viên</h2>
-          <p className="text-sm text-gray-500 mt-1">Lưu trữ và điều chỉnh danh sách sinh viên</p>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Quản lý Sinh viên
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Lưu trữ và điều chỉnh danh sách sinh viên
+          </p>
         </div>
         <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-          <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          <svg
+            className="h-6 w-6 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
           </svg>
         </div>
       </div>
@@ -122,32 +148,85 @@ function StudentPage() {
       <section className="relative bg-white/90 backdrop-blur-sm p-8 rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/30">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-2 h-6 bg-indigo-600 rounded-full"></div>
-          <h3 className="text-lg font-bold text-gray-800">Thêm sinh viên mới</h3>
+          <h3 className="text-lg font-bold text-gray-800">
+            Thêm sinh viên mới
+          </h3>
         </div>
 
-        <form onSubmit={addStudent} className="grid grid-cols-1 md:grid-cols-5 gap-5">
+        <form
+          onSubmit={addStudent}
+          className="grid grid-cols-1 md:grid-cols-5 gap-5"
+        >
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Mã SV</label>
-            <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm" value={studentCode} onChange={(e) => setStudentCode(e.target.value)} required />
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Mã SV
+            </label>
+            <input
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm"
+              value={studentCode}
+              onChange={(e) => setStudentCode(e.target.value)}
+              required
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Họ tên</label>
-            <input className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Họ tên
+            </label>
+            <input
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Email</label>
-            <input type="email" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Email
+            </label>
+            <input
+              type="email"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Lớp học</label>
-            <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none text-sm cursor-pointer" value={classId} onChange={(e) => setClassId(e.target.value)} required>
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Lớp học
+            </label>
+            <select
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-100 outline-none text-sm cursor-pointer"
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+              required
+            >
               <option value="">-- Chọn lớp --</option>
-              {classes.map((cls) => (<option key={cls.id} value={cls.id}>{cls.class_name}</option>))}
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.class_name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex items-end">
-            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all shadow-md flex items-center justify-center text-sm">
-              <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all shadow-md flex items-center justify-center text-sm"
+            >
+              <svg
+                className="h-5 w-5 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
               Thêm mới
             </button>
           </div>
@@ -169,28 +248,67 @@ function StudentPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-              <tr><td colSpan="6" className="text-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 inline-block"></div></td></tr>
+              <tr>
+                <td colSpan="6" className="text-center py-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 inline-block"></div>
+                </td>
+              </tr>
             ) : students.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-10 text-gray-400">Danh sách trống.</td></tr>
+              <tr>
+                <td colSpan="6" className="text-center py-10 text-gray-400">
+                  Danh sách trống.
+                </td>
+              </tr>
             ) : (
               students.map((sv) => (
-                <tr key={sv.id} className="hover:bg-indigo-50/30 transition-colors">
-                  <td className="px-6 py-4 font-bold text-indigo-600">#{sv.id}</td>
+                <tr
+                  key={sv.id}
+                  className="hover:bg-indigo-50/30 transition-colors"
+                >
+                  <td className="px-6 py-4 font-bold text-indigo-600">
+                    #{sv.id}
+                  </td>
                   <td className="px-6 py-4 font-semibold">{sv.student_code}</td>
                   <td className="px-6 py-4">
                     {editingId === sv.id ? (
-                      <input className="w-full border rounded-lg px-2 py-1 outline-none focus:ring-1 ring-indigo-300" value={sv.full_name} onChange={(e) => handleInputChange(sv.id, "full_name", e.target.value)} />
-                    ) : (sv.full_name)}
+                      <input
+                        className="w-full border rounded-lg px-2 py-1 outline-none focus:ring-1 ring-indigo-300"
+                        value={sv.full_name}
+                        onChange={(e) =>
+                          handleInputChange(sv.id, "full_name", e.target.value)
+                        }
+                      />
+                    ) : (
+                      sv.full_name
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     {editingId === sv.id ? (
-                      <input className="w-full border rounded-lg px-2 py-1 outline-none" value={sv.email} onChange={(e) => handleInputChange(sv.id, "email", e.target.value)} />
-                    ) : (sv.email)}
+                      <input
+                        className="w-full border rounded-lg px-2 py-1 outline-none"
+                        value={sv.email}
+                        onChange={(e) =>
+                          handleInputChange(sv.id, "email", e.target.value)
+                        }
+                      />
+                    ) : (
+                      sv.email
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     {editingId === sv.id ? (
-                      <select className="w-full border rounded-lg px-2 py-1" value={sv.class_id} onChange={(e) => handleInputChange(sv.id, "class_id", e.target.value)}>
-                        {classes.map(cls => <option key={cls.id} value={cls.id}>{cls.class_name}</option>)}
+                      <select
+                        className="w-full border rounded-lg px-2 py-1"
+                        value={sv.class_id}
+                        onChange={(e) =>
+                          handleInputChange(sv.id, "class_id", e.target.value)
+                        }
+                      >
+                        {classes.map((cls) => (
+                          <option key={cls.id} value={cls.id}>
+                            {cls.class_name}
+                          </option>
+                        ))}
                       </select>
                     ) : (
                       <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-bold border border-indigo-100">
@@ -201,13 +319,33 @@ function StudentPage() {
                   <td className="px-6 py-4 text-center">
                     {editingId === sv.id ? (
                       <div className="flex gap-3 justify-center text-sm">
-                        <button onClick={() => updateStudent(sv.id)} className="text-green-600 font-bold">Lưu</button>
-                        <button onClick={() => setEditingId(null)} className="text-gray-400 font-bold">Hủy</button>
+                        <button
+                          onClick={() => updateStudent(sv.id)}
+                          className="text-green-600 font-bold"
+                        >
+                          Lưu
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="text-gray-400 font-bold"
+                        >
+                          Hủy
+                        </button>
                       </div>
                     ) : (
                       <div className="flex gap-4 justify-center text-sm">
-                        <button onClick={() => setEditingId(sv.id)} className="text-indigo-600 font-bold">Sửa</button>
-                        <button onClick={() => deleteStudent(sv.id)} className="text-red-500 font-bold">Xóa</button>
+                        <button
+                          onClick={() => setEditingId(sv.id)}
+                          className="text-indigo-600 font-bold"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          onClick={() => deleteStudent(sv.id)}
+                          className="text-red-500 font-bold"
+                        >
+                          Xóa
+                        </button>
                       </div>
                     )}
                   </td>
