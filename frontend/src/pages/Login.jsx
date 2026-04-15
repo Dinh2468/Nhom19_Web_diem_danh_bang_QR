@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = "https://asyllabic-emelina-uncheated.ngrok-free.dev/api";
 
 const Login = () => {
   const navigate = useNavigate();
