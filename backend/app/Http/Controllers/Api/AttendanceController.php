@@ -43,13 +43,16 @@ class AttendanceController extends Controller
     /**
      * Lấy lịch sử điểm danh của sinh viên
      */
-    public function studentHistory() 
-    {
-        $history = Attendance::where('student_id', auth()->user()->student_id)
-            ->with('session.course')
-            ->get();
-        return response()->json($history);
-    }
+public function studentHistory() 
+{
+    // Lấy lịch sử kèm theo thông tin buổi học (session) và môn học (course)
+    $history = Attendance::where('student_id', auth()->user()->student_id)
+        ->with(['session.course']) // Quan trọng: lấy lồng dữ liệu môn học
+        ->orderBy('checkin_time', 'desc')
+    ->get();
+
+    return response()->json($history);
+}
 
     /**
      * Lấy danh sách Realtime cho Giảng viên
@@ -152,9 +155,13 @@ class AttendanceController extends Controller
      * Xuất file Excel
      */
     public function exportExcel($sessionId)
-    {
-        return Excel::download(new AttendanceExport($sessionId), "diem-danh-buoi-{$sessionId}.xlsx");
-    }
+{
+    // Kiểm tra xem có dữ liệu không trước khi xuất (tùy chọn)
+    $session = ClassSession::findOrFail($sessionId);
+    
+    // Gọi class Export của bạn
+    return Excel::download(new AttendanceExport($sessionId), "DiemDanh_Buoi_{$sessionId}.xlsx");
+}
 
     /**
      * API Thống kê Dashboard

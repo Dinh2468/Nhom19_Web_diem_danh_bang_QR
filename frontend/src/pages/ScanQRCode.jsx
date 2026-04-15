@@ -84,6 +84,7 @@ function ScanQRCode() {
   };
 
   const submitAttendance = async (decoded) => {
+    console.log("Dữ liệu thô từ QR:", decoded);
     setIsSubmitting(true);
     setError("");
     try {

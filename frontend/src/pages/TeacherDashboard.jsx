@@ -62,7 +62,7 @@ const TeacherDashboard = () => {
         return () => clearInterval(interval);
     }, [isSessionActive, selectedSession]);
 
-    // 2. Token QR Động - FIX: Chỉ chạy khi session thực sự active
+    // 2. Token QR Động
     useEffect(() => {
         let qrInterval;
         const fetchNewQRToken = async () => {
@@ -76,7 +76,6 @@ const TeacherDashboard = () => {
         };
 
         if (isSessionActive && selectedSession) {
-            // Chạy ngay lập tức khi vừa bật
             qrInterval = setInterval(fetchNewQRToken, 30000);
         }
         return () => clearInterval(qrInterval);
@@ -99,22 +98,45 @@ const TeacherDashboard = () => {
     };
 
     const handleStart = async () => {
-        if (!selectedSession) return alert("Vui lòng chọn cụ thể buổi học hôm nay!");
-        try {
-            // Lấy mã đầu tiên
-            const res = await axios.get(`http://127.0.0.1:8000/api/attendance/generate-token/${selectedSession}`, axiosConfig);
-            setQrCodeData(`${selectedSession}-${res.data.qr_token}`);
-            setStartTime(new Date().toLocaleTimeString('vi-VN'));
-            setEndTime(null);
-            setIsSessionActive(true); 
-        } catch (err) { alert("Lỗi lấy mã QR từ Server!"); }
-    };
+    if (!selectedSession) return alert("Vui lòng chọn buổi học!");
+    setQrCodeData(""); // Xóa mã cũ ngay lập tức
+    try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/attendance/generate-token/${selectedSession}`, axiosConfig);
+        // Đảm bảo set đúng format session_id-token
+        setQrCodeData(`${selectedSession}-${res.data.qr_token}`);
+        setIsSessionActive(true);
+    } catch (err) { alert("Lỗi lấy mã!"); }
+};
 
     const handleEnd = () => {
         if (window.confirm("Bạn có chắc muốn kết thúc điểm danh và chốt sổ?")) {
             setEndTime(new Date().toLocaleTimeString('vi-VN'));
             setIsSessionActive(false);
             setQrCodeData("");
+        }
+    };
+
+    // --- HÀM XUẤT EXCEL ---
+    const handleExportExcel = async () => {
+        if (!selectedSession) return alert("Vui lòng chọn một buổi học để xuất dữ liệu!");
+        
+        try {
+            const response = await axios.get(`http://127.0.0.1:8000/api/attendance/export/${selectedSession}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob', // Quan trọng để nhận file binary
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `DiemDanh_Buoi_${selectedSession}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            alert("Lỗi khi xuất file Excel. Hãy kiểm tra Backend!");
         }
     };
 
@@ -127,6 +149,8 @@ const TeacherDashboard = () => {
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6 bg-gray-50/50 min-h-screen">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* CỘT TRÁI: ĐIỀU KHIỂN */}
                 <div className="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 h-fit">
                     <h2 className="text-xl font-bold mb-6 text-gray-800">📅 Thiết lập tiết dạy</h2>
                     <div className="space-y-5">
@@ -223,6 +247,7 @@ const TeacherDashboard = () => {
                     </div>
                 </div>
 
+                {/* CỘT PHẢI: QR & DANH SÁCH */}
                 <div className="lg:col-span-2 space-y-6">
                     {isSessionActive || endTime ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
@@ -249,6 +274,19 @@ const TeacherDashboard = () => {
                                     <span className="font-bold text-gray-700 text-xs uppercase tracking-wider">
                                         {isSessionActive ? "🟢 Đang điểm danh (Realtime)" : "📋 Bảng tổng kết chốt sổ"}
                                     </span>
+                                    
+                                    {/* NÚT XUẤT EXCEL CỦA DAT ĐÃ CẬP NHẬT */}
+                                    {selectedSession && (
+                                        <button 
+                                            onClick={handleExportExcel}
+                                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black py-1.5 px-3 rounded-lg shadow-sm transition-all transform active:scale-95"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            XUẤT EXCEL
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
                                     {attendanceList.map((item, idx) => {
