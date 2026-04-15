@@ -27,15 +27,13 @@ const Teacher = () => {
   const fetchTeachers = async () => {
     try {
       const token = localStorage.getItem("token");
-      console.log("Token hiện tại:", token); // <-- KIỂM TRA DÒNG NÀY TRONG CONSOLE
-
       const response = await axios.get(Teacher_API_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
+          // Thêm dòng này để "vượt rào" Ngrok
+          "ngrok-skip-browser-warning": "69420",
         },
       });
-
-      console.log("Dữ liệu từ API:", response.data); // <-- XEM JSON CÓ ĐÚNG MẢNG KHÔNG
       setTeachers(response.data);
       setLoading(false);
     } catch (error) {
