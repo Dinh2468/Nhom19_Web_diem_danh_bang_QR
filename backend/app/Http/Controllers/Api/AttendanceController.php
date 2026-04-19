@@ -22,21 +22,20 @@ class AttendanceController extends Controller
     public function generateQRToken($sessionId)
     {
         $session = ClassSession::findOrFail($sessionId);
+        $token = Str::random(32); // Đây là chuỗi ngẫu nhiên
+        $expiredAt = Carbon::now()->addSeconds(90);
 
-        $token = Str::random(32);
-
-        // Cài đặt thời gian hết hạn (Ví dụ: 45 giây tính từ lúc tạo)
-        $expiredAt = Carbon::now()->addSeconds(90); // Tăng thời gian để dễ test
-
+        // CHỈ lưu chuỗi ngẫu nhiên vào DB
         $session->update([
             'qr_token' => $token,
             'expired_at' => $expiredAt
         ]);
 
         return response()->json([
-            'qr_token' => $sessionId . '-' . $token, // Trả về token kèm session_id để dễ debug
-            'expires_in' => 90, // Thời gian còn hiệu lực tính bằng giây
-            'expires_at' => $expiredAt->toDateTimeString() // Thời gian hết hạn dạng chuỗi để debug
+            // Trả về định dạng ghép để React tách ra được
+            'qr_token' => $sessionId . '-' . $token,
+            'expires_in' => 90,
+            'expires_at' => $expiredAt->toDateTimeString()
         ]);
     }
 
