@@ -64,12 +64,12 @@ class AttendanceController extends Controller
                     ->where('a.session_id', '=', $sessionId);
             })
             ->where('s.class_id', '=', function ($query) use ($sessionId) {
-                $query->select('class_id')
-                    ->from('class_sessions')
-                    ->where('id', '=', $sessionId);
+                $query->select('c.class_id')
+                    ->from('class_sessions as cs')
+                    ->join('courses as c', 'cs.course_id', '=', 'c.id') // Join qua courses
+                    ->where('cs.id', '=', $sessionId);
             })
             ->select('s.full_name', 's.student_code', 'a.status', 'a.checkin_time')
-            // Ưu tiên hiện những người vừa điểm danh xong lên đầu danh sách
             ->orderByRaw('CASE WHEN a.status IS NULL THEN 1 ELSE 0 END, a.checkin_time DESC')
             ->get();
 
@@ -90,10 +90,19 @@ class AttendanceController extends Controller
 
         $session = ClassSession::findOrFail($request->session_id);
 
-        // Dùng trim() để đảm bảo so sánh chính xác tuyệt đối
-        if (trim($session->qr_token) !== trim($request->qr_token)) {
+        // 1. Xác định đúng tên cột trong DB (Nếu DB của bạn là qr_code thì đổi qr_token thành qr_code)
+        $dbToken = (string) $session->qr_token;
+        $sentToken = (string) $request->qr_token;
+
+        // 2. So sánh bằng hàm an toàn và thêm Debug để nhìn rõ lỗi ở tab Response
+        if (!hash_equals(trim($dbToken), trim($sentToken))) {
             return response()->json([
                 'message' => 'Mã QR không khớp hoặc đã bị đổi!',
+                'debug' => [
+                    'token_trong_db' => $dbToken,
+                    'token_gui_len'  => $sentToken,
+                    'so_khop'        => false
+                ]
             ], 400);
         }
 
