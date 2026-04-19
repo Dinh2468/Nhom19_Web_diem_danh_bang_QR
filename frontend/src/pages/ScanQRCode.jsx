@@ -105,25 +105,25 @@ function ScanQRCode() {
     try {
       const coords = await getLocation();
 
-      // TÁCH MÃ CHUẨN: ID-TOKEN
-      const firstDashIndex = decoded.indexOf("-");
-      if (firstDashIndex === -1) throw new Error("Mã QR sai định dạng!");
+      // SỬA ĐOẠN NÀY ĐỂ TÁCH MÃ CHUẨN
+      const parts = decoded.split("-");
+      if (parts.length < 2) throw new Error("Mã QR sai định dạng!");
 
-      const sessionId = decoded.substring(0, firstDashIndex);
-      const qrToken = decoded.substring(firstDashIndex + 1);
+      const sessionId = parts[0]; // Lấy số 1
+      const qrToken = parts.slice(1).join("-"); // Lấy chuỗi BaznRyCR...
 
       const res = await axios.post(
         `${API_BASE_URL}/attendance`,
         {
           session_id: sessionId,
-          qr_token: qrToken,
+          qr_token: qrToken, // Bây giờ sẽ chỉ gửi chuỗi sạch
           latitude: coords.latitude,
           longitude: coords.longitude,
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "ngrok-skip-browser-warning": "69420", // Thêm dòng này
+            "ngrok-skip-browser-warning": "69420",
           },
         },
       );
