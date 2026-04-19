@@ -128,7 +128,7 @@ const Login = () => {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-8">
+        {/* <p className="text-center text-sm text-gray-600 mt-8">
           Chưa có tài khoản?{" "}
           <Link
             to="/dangky"
@@ -136,7 +136,7 @@ const Login = () => {
           >
             Đăng ký ngay
           </Link>
-        </p>
+        </p> */}
       </div>
     </div>
   );

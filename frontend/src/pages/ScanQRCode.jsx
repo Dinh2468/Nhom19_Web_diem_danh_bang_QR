@@ -100,6 +100,7 @@ function ScanQRCode() {
   };
 
   const submitAttendance = async (decoded) => {
+    console.log("Dữ liệu thô từ QR:", decoded);
     setIsSubmitting(true);
     setError("");
     try {
@@ -111,6 +112,9 @@ function ScanQRCode() {
 
       const sessionId = parts[0]; // Lấy số 1
       const qrToken = parts.slice(1).join("-"); // Lấy chuỗi BaznRyCR...
+
+      console.log("SessionID tách được:", sessionId);
+      console.log("Token tách được:", qrToken);
 
       const res = await axios.post(
         `${API_BASE_URL}/attendance`,

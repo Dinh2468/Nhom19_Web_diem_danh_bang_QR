@@ -94,8 +94,16 @@ class AttendanceController extends Controller
         $dbToken = (string) $session->qr_token;
         $sentToken = (string) $request->qr_token;
 
+        if (str_contains($sentToken, '-')) {
+            $parts = explode('-', $sentToken);
+            // Nếu phần đầu là sessionId, lấy phần sau làm token
+            if ($parts[0] == $request->session_id) {
+                $sentToken = implode('-', array_slice($parts, 1));
+            }
+        }
+
         // 2. So sánh bằng hàm an toàn và thêm Debug để nhìn rõ lỗi ở tab Response
-        if (!hash_equals(trim($dbToken), trim($sentToken))) {
+        if (!hash_equals($dbToken, $sentToken)) {
             return response()->json([
                 'message' => 'Mã QR không khớp hoặc đã bị đổi!',
                 'debug' => [
@@ -105,7 +113,6 @@ class AttendanceController extends Controller
                 ]
             ], 400);
         }
-
         // Kiểm tra sinh viên (Đảm bảo student_id tồn tại trong bảng users)
         $studentId = Auth::user()->student_id;
         if (!$studentId) {
