@@ -24,9 +24,9 @@ class AttendanceController extends Controller
         $session = ClassSession::findOrFail($sessionId);
 
         $token = Str::random(32);
-        
+
         // Cài đặt thời gian hết hạn (Ví dụ: 45 giây tính từ lúc tạo)
-        $expiredAt = Carbon::now()->addSeconds(90);
+        $expiredAt = Carbon::now()->addSeconds(90); // Tăng thời gian để dễ test
 
         $session->update([
             'qr_token' => $token,
@@ -34,16 +34,16 @@ class AttendanceController extends Controller
         ]);
 
         return response()->json([
-            'qr_token' => $token,
-            'expires_in' => 30,
-            'expires_at' => $expiredAt->toDateTimeString()
+            'qr_token' => $sessionId . '-' . $token, // Trả về token kèm session_id để dễ debug
+            'expires_in' => 90, // Thời gian còn hiệu lực tính bằng giây
+            'expires_at' => $expiredAt->toDateTimeString() // Thời gian hết hạn dạng chuỗi để debug
         ]);
     }
 
     /**
      * Lấy lịch sử điểm danh của sinh viên
      */
-    public function studentHistory() 
+    public function studentHistory()
     {
         $history = Attendance::where('student_id', auth()->user()->student_id)
             ->with('session.course')
@@ -60,14 +60,14 @@ class AttendanceController extends Controller
     public function getRoomStatus($sessionId)
     {
         $data = DB::table('students as s')
-            ->leftJoin('attendance as a', function($join) use ($sessionId) {
+            ->leftJoin('attendance as a', function ($join) use ($sessionId) {
                 $join->on('s.id', '=', 'a.student_id')
-                     ->where('a.session_id', '=', $sessionId);
+                    ->where('a.session_id', '=', $sessionId);
             })
-            ->where('s.class_id', '=', function($query) use ($sessionId) {
+            ->where('s.class_id', '=', function ($query) use ($sessionId) {
                 $query->select('class_id')
-                      ->from('class_sessions')
-                      ->where('id', '=', $sessionId);
+                    ->from('class_sessions')
+                    ->where('id', '=', $sessionId);
             })
             ->select('s.full_name', 's.student_code', 'a.status', 'a.checkin_time')
             // Ưu tiên hiện những người vừa điểm danh xong lên đầu danh sách
@@ -80,26 +80,30 @@ class AttendanceController extends Controller
     /**
      * Xử lý lưu dữ liệu điểm danh từ Sinh viên
      */
-   public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'session_id' => 'required|exists:class_sessions,id',
+            'qr_token' => 'required|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'qr_token' => 'required|string',
         ]);
 
-        // Sử dụng with('course') để lấy được tên môn học
-        $session = ClassSession::with('course')->findOrFail($request->session_id);
+        $session = ClassSession::findOrFail($request->session_id);
 
-        // 1. KIỂM TRA BẢO MẬT TOKEN
+        // Dùng trim() để đảm bảo so sánh chính xác tuyệt đối
         if (trim($session->qr_token) !== trim($request->qr_token)) {
             return response()->json([
-                'message' => 'Mã QR không khớp!',
-                'db_token' => $session->qr_token, // Trả về để debug
-                'sent_token' => $request->qr_token
+                'message' => 'Mã QR không khớp hoặc đã bị đổi!',
             ], 400);
         }
+
+        // Kiểm tra sinh viên (Đảm bảo student_id tồn tại trong bảng users)
+        $studentId = Auth::user()->student_id;
+        if (!$studentId) {
+            return response()->json(['message' => 'Tài khoản không có thông tin sinh viên!'], 403);
+        }
+
 
         // TẠM ẨN KIỂM TRA HẾT HẠN ĐỂ TEST THÔNG LUỒNG
         /*
@@ -108,9 +112,9 @@ class AttendanceController extends Controller
         }
         */
 
-        $now = Carbon::now(); 
+        $now = Carbon::now();
         $startTime = Carbon::parse($session->session_date . ' ' . $session->start_time);
-        
+
         $status = 'Có mặt';
         if ($now->gt($startTime->copy()->addMinutes(15))) {
             $status = 'Muộn';
@@ -120,9 +124,9 @@ class AttendanceController extends Controller
             $studentId = Auth::user()->student_id;
 
             $exists = Attendance::where('student_id', $studentId)
-                                ->where('session_id', $request->session_id)
-                                ->exists();
-            
+                ->where('session_id', $request->session_id)
+                ->exists();
+
             if ($exists) {
                 return response()->json(['message' => 'Bạn đã điểm danh rồi!'], 400);
             }
@@ -142,7 +146,6 @@ class AttendanceController extends Controller
                 'course_name' => $session->course->course_name ?? 'Môn học',
                 'data'    => $attendance->load('student')
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json(['message' => 'Lỗi hệ thống!', 'error' => $e->getMessage()], 500);
         }
@@ -173,9 +176,9 @@ class AttendanceController extends Controller
 
         $totalPossibleAttendances = $totalSessions * $totalStudents;
         $absentCount = $totalPossibleAttendances - $presentCount;
-        
-        $attendanceRate = $totalPossibleAttendances > 0 
-            ? round(($presentCount / $totalPossibleAttendances) * 100, 2) 
+
+        $attendanceRate = $totalPossibleAttendances > 0
+            ? round(($presentCount / $totalPossibleAttendances) * 100, 2)
             : 0;
 
         return response()->json([
