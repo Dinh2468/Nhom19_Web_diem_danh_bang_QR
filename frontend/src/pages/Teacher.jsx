@@ -34,6 +34,7 @@ const Teacher = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "ngrok-skip-browser-warning": "69420",
+          Accept: "application/json",
         },
       });
 
