@@ -4,6 +4,7 @@ import axios from "axios";
 const BASE_URL = "https://asyllabic-emelina-uncheated.ngrok-free.dev/api";
 const Class_API_URL = `${BASE_URL}/class-sessions`;
 const ATTENDANCE_API_URL = `${BASE_URL}/attendance`;
+
 const TeacherDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -29,7 +30,7 @@ const TeacherDashboard = () => {
   const axiosConfig = {
     headers: {
       Authorization: `Bearer ${token}`,
-      "ngrok-skip-browser-warning": "69420", // THÊM DÒNG NÀY
+      "ngrok-skip-browser-warning": "69420",
     },
   };
 
@@ -38,7 +39,7 @@ const TeacherDashboard = () => {
     try {
       const res = await axios.get(
         `${Class_API_URL}?course_id=${courseId}`,
-        axiosConfig, // Đảm bảo đã có axiosConfig ở đây
+        axiosConfig,
       );
       setSessions(res.data || []);
     } catch (err) {
@@ -71,10 +72,14 @@ const TeacherDashboard = () => {
         try {
           const res = await axios.get(
             `${ATTENDANCE_API_URL}/generate-token/${selectedSession}`,
-            axiosConfig, // THÊM axiosConfig VÀO ĐÂY
+            axiosConfig,
           );
-          setAttendanceList(res.data || []);
-        } catch (err) {}
+          const data = Array.isArray(res.data) ? res.data : res.data.data || [];
+          setAttendanceList(data);
+        } catch (err) {
+          console.error("Lỗi:", err);
+          setAttendanceList([]);
+        }
       };
       fetchAttendanceRealtime();
       interval = setInterval(fetchAttendanceRealtime, 3000);
@@ -82,7 +87,7 @@ const TeacherDashboard = () => {
     return () => clearInterval(interval);
   }, [isSessionActive, selectedSession]);
 
-  // 2. Token QR Động - FIX: Chỉ chạy khi session thực sự active
+  // 2. Token QR Động
   useEffect(() => {
     let qrInterval;
     const fetchNewQRToken = async () => {
@@ -92,14 +97,12 @@ const TeacherDashboard = () => {
           axiosConfig,
         );
         setQrCodeData(`${selectedSession}-${res.data.qr_token}`);
-        console.log("Mã QR đã được làm mới");
       } catch (err) {
         console.error("Lỗi refresh QR");
       }
     };
 
     if (isSessionActive && selectedSession) {
-      // Chạy ngay lập tức khi vừa bật
       qrInterval = setInterval(fetchNewQRToken, 30000);
     }
     return () => clearInterval(qrInterval);
@@ -108,14 +111,20 @@ const TeacherDashboard = () => {
   const handleCreateSession = async (e) => {
     e.preventDefault();
     try {
+      // Lấy thông tin user từ localStorage (giả sử bạn lưu object user có chứa id)
+      const user = JSON.parse(localStorage.getItem("user"));
+      const teacherId = user?.id; // Lấy ID của giảng viên đang đăng nhập
+
       await axios.post(
         Class_API_URL,
         {
           course_id: selectedCourse,
+          teacher_id: teacherId, // THÊM DÒNG NÀY ĐỂ GỬI LÊN BACKEND
           ...newSession,
         },
         axiosConfig,
       );
+
       alert("✅ Đã tạo buổi học thành công!");
       setShowCreateForm(false);
       setNewSession({
@@ -126,6 +135,7 @@ const TeacherDashboard = () => {
       });
       fetchSessions(selectedCourse);
     } catch (err) {
+      console.error(err);
       alert("❌ Lỗi khi tạo buổi học!");
     }
   };
@@ -134,7 +144,6 @@ const TeacherDashboard = () => {
     if (!selectedSession)
       return alert("Vui lòng chọn cụ thể buổi học hôm nay!");
     try {
-      // Lấy mã đầu tiên
       const res = await axios.get(
         `${ATTENDANCE_API_URL}/generate-token/${selectedSession}`,
         axiosConfig,
@@ -156,12 +165,12 @@ const TeacherDashboard = () => {
     }
   };
 
-  const totalStudents = attendanceList.length;
-  const presentCount = attendanceList.filter(
-    (s) => s.status === "Có mặt",
-  ).length;
-  const lateCount = attendanceList.filter((s) => s.status === "Muộn").length;
-  const absentCount = attendanceList.filter((s) => s.status === null).length;
+  // --- CỤM TÍNH TOÁN AN TOÀN ---
+  const safeList = Array.isArray(attendanceList) ? attendanceList : [];
+  const totalStudents = safeList.length;
+  const presentCount = safeList.filter((s) => s.status === "Có mặt").length;
+  const lateCount = safeList.filter((s) => s.status === "Muộn").length;
+  const absentCount = safeList.filter((s) => s.status === null).length;
   const scannedCount = presentCount + lateCount;
 
   return (
@@ -392,7 +401,7 @@ const TeacherDashboard = () => {
                   </span>
                 </div>
                 <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
-                  {attendanceList.map((item, idx) => {
+                  {safeList.map((item, idx) => {
                     const isAttended = item.status !== null;
                     return (
                       <div

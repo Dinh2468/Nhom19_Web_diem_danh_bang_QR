@@ -33,14 +33,22 @@ const Teacher = () => {
       const response = await axios.get(Teacher_API_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
-          // Thêm dòng này để "vượt rào" Ngrok
           "ngrok-skip-browser-warning": "69420",
         },
       });
-      setTeachers(response.data);
+
+      // KIỂM TRA VÀ GÁN DỮ LIỆU CẨN THẬN
+      // Nếu Laravel trả về mảng trực tiếp: response.data
+      // Nếu Laravel trả về dạng: { data: [...] }: response.data.data
+      const incomingData = Array.isArray(response.data)
+        ? response.data
+        : response.data.data || [];
+      setTeachers(incomingData);
+
       setLoading(false);
     } catch (error) {
       console.error("Lỗi gọi API:", error.response);
+      setTeachers([]); // Nếu lỗi thì set về mảng rỗng để tránh crash trang
       setLoading(false);
     }
   };
@@ -152,7 +160,7 @@ const Teacher = () => {
                   Đang tải...
                 </td>
               </tr>
-            ) : (
+            ) : teachers && teachers.length > 0 ? (
               teachers.map((t) => (
                 <tr key={t.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-medium text-indigo-600">
@@ -178,6 +186,12 @@ const Teacher = () => {
                   </td>
                 </tr>
               ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center py-10 text-gray-500">
+                  Không có dữ liệu giảng viên.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

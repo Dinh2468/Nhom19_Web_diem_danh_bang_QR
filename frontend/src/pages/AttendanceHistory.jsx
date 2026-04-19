@@ -15,7 +15,12 @@ function AttendanceHistory() {
     const fetchHistory = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/attendance/history`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            // THÊM DÒNG NÀY ĐỂ HẾT LỖI ĐỎ 200 (OK)
+            "ngrok-skip-browser-warning": "69420",
+            Accept: "application/json",
+          },
         });
         const data = Array.isArray(response.data)
           ? response.data
