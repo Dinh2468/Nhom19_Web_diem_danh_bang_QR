@@ -30,7 +30,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Navbar />
 
-        <main className="w-[95%] max-w-[1400px] mx-auto py-8 sm:py-12 flex-grow">
+        <main className="w-[95%] max-w-350 mx-auto py-8 sm:py-12 grow">
           <Routes>
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/home" element={<HomePage />} />

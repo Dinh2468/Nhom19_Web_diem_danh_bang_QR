@@ -108,23 +108,23 @@ const Navbar = () => {
                 <NavLink to="/register">Đăng Ký</NavLink>  */}
               </>
             ) : (
-              {
-                /* <div className="flex items-center gap-4 ml-4 border-l pl-6 border-gray-200">
+              <div className="flex items-center gap-4 ml-4 border-l pl-6 border-gray-200">
                 <div className="flex flex-col items-end leading-tight">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     {role === "teacher" ? "Giảng viên" : "Thành viên"}
                   </span>
-                  <span className="text-sm font-black text-gray-900">{user.name || "User"}</span>
+                  <span className="text-sm font-black text-gray-900">
+                    {user.name || "User"}
+                  </span>
                 </div>
-                
+
                 <button
                   onClick={handleLogout}
                   className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-red-100"
                 >
                   Thoát
                 </button>
-              </div> */
-              }
+              </div>
             )}
           </div>
         </div>
