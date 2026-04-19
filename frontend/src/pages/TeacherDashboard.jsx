@@ -168,6 +168,16 @@ const TeacherDashboard = () => {
     }
   };
 
+  const handleExportExcel = () => {
+    if (selectedSession) {
+      // Gọi thẳng đến endpoint mà không cần Header Auth
+      const exportUrl = `${BASE_URL}/export/${selectedSession}`;
+      window.open(exportUrl, "_blank");
+    } else {
+      alert("Vui lòng chọn một buổi học để xuất dữ liệu!");
+    }
+  };
+
   // --- CỤM TÍNH TOÁN AN TOÀN ---
   const safeList = Array.isArray(attendanceList) ? attendanceList : [];
   const totalStudents = safeList.length;
@@ -402,6 +412,14 @@ const TeacherDashboard = () => {
                       ? "🟢 Đang điểm danh (Realtime)"
                       : "📋 Bảng tổng kết chốt sổ"}
                   </span>
+                  {selectedSession && (
+                    <button
+                      onClick={handleExportExcel}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg text-[10px] font-bold hover:bg-green-700 transition-all shadow-sm"
+                    >
+                      <span>📊</span> Xuất Excel
+                    </button>
+                  )}
                 </div>
                 <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
                   {safeList.map((item, idx) => {
