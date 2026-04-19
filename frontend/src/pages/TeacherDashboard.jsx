@@ -65,22 +65,25 @@ const TeacherDashboard = () => {
   }, [selectedCourse]);
 
   // 1. Polling Realtime SV
+  // TeacherDashboard.jsx
+
   useEffect(() => {
     let interval;
     if (isSessionActive && selectedSession) {
       const fetchAttendanceRealtime = async () => {
         try {
+          // Đảm bảo URL này khớp với route bạn khai báo trong api.php của Laravel
           const res = await axios.get(
-            `${ATTENDANCE_API_URL}/get-room-status/${selectedSession}`,
+            `${BASE_URL}/attendance/session/${selectedSession}`,
             axiosConfig,
           );
-          const data = Array.isArray(res.data) ? res.data : res.data.data || [];
-          setAttendanceList(data);
+          // Cập nhật dữ liệu từ res.data (Laravel thường trả trực tiếp mảng nếu bạn dùng return response()->json($data))
+          setAttendanceList(res.data || []);
         } catch (err) {
-          console.error("Lỗi:", err);
-          setAttendanceList([]);
+          console.error("Lỗi lấy danh sách Realtime:", err);
         }
       };
+
       fetchAttendanceRealtime();
       interval = setInterval(fetchAttendanceRealtime, 3000);
     }
@@ -372,7 +375,7 @@ const TeacherDashboard = () => {
                     <span className="text-[10px] font-black text-indigo-600 mb-4 uppercase bg-indigo-50 px-3 py-1 rounded-full w-fit mx-auto">
                       Vui lòng quét mã bên dưới
                     </span>
-                    <div className="p-4 bg-white border-2 border-dashed border-indigo-100 rounded-3xl inline-block shadow-inner animate-pulse">
+                    <div className="p-4 bg-white border-2 border-dashed border-indigo-100 rounded-3xl inline-block shadow-inner ">
                       {qrCodeData && (
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${qrCodeData}`}

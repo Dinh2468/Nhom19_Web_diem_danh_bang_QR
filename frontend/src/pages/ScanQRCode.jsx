@@ -150,7 +150,7 @@ function ScanQRCode() {
           Quét mã điểm danh
         </h1>
         {attendedCourse && (
-          <div className="bg-green-50 text-green-700 p-3 rounded-xl font-bold border border-green-100 animate-pulse">
+          <div className="bg-green-50 text-green-700 p-3 rounded-xl font-bold border border-green-100 ">
             📖 Môn học: {attendedCourse}
           </div>
         )}
