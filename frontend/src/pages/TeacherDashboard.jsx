@@ -71,7 +71,7 @@ const TeacherDashboard = () => {
       const fetchAttendanceRealtime = async () => {
         try {
           const res = await axios.get(
-            `${ATTENDANCE_API_URL}/generate-token/${selectedSession}`,
+            `${ATTENDANCE_API_URL}/get-room-status/${selectedSession}`,
             axiosConfig,
           );
           const data = Array.isArray(res.data) ? res.data : res.data.data || [];
@@ -103,7 +103,7 @@ const TeacherDashboard = () => {
     };
 
     if (isSessionActive && selectedSession) {
-      qrInterval = setInterval(fetchNewQRToken, 30000);
+      qrInterval = setInterval(fetchNewQRToken, 60000); // Refresh QR mỗi 60s để tránh bị lộ mã lâu và tăng bảo mật
     }
     return () => clearInterval(qrInterval);
   }, [isSessionActive, selectedSession]);
