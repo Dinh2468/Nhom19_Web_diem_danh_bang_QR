@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\TeacherController;
 // THÊM 2 DÒNG NÀY CHO TÍNH NĂNG MỚI
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\ClassSessionController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sinh-vien', SinhVienController::class);
     Route::apiResource('classes', ClassController::class);
     Route::apiResource('subjects', SubjectController::class);
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     // ---------------------------------------------------
     // PHẦN MỚI THÊM: LỚP HỌC PHẦN & BUỔI HỌC

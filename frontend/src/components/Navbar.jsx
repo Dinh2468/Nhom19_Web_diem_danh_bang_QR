@@ -67,6 +67,12 @@ const Navbar = () => {
                 {isAdminOpen && (
                   <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-100 rounded-lg shadow-xl py-1 z-50">
                     <Link
+                      to="/admin/accounts"
+                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
+                    >
+                      👥 Tài khoản
+                    </Link>
+                    <Link
                       to="/students"
                       className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
                     >
