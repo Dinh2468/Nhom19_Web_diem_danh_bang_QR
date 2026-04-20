@@ -158,7 +158,7 @@ function AccountManagement() {
                 <th className="py-4 px-4">Email</th>
                 <th className="py-4 px-4">Vai trò</th>
                 <th className="py-4 px-4">Mã định danh</th>
-                <th className="py-4 px-4 text-right">Hành động</th>
+                {/* <th className="py-4 px-4 text-right">Hành động</th> */}
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -198,12 +198,12 @@ function AccountManagement() {
                         "---"}
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <button
+                      {/* <button
                         onClick={() => handleDelete(u.id)}
                         className="text-red-500 hover:underline font-bold"
                       >
                         Xóa
-                      </button>
+                      </button> */}
                     </td>
                   </tr>
                 ))
