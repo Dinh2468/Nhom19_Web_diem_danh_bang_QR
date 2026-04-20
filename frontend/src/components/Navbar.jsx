@@ -96,6 +96,12 @@ const Navbar = () => {
                     >
                       📚 Môn học
                     </Link>
+                    <Link
+                      to="/admin/courses"
+                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
+                    >
+                      📚 Khóa học
+                    </Link>
                   </div>
                 )}
               </div>

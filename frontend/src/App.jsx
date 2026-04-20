@@ -23,6 +23,7 @@ import Teacherpage from "./pages/Teacher";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import TeacherAdmin from "./pages/TeacherAdmin";
 import AccountManagement from "./pages/AccountManagement";
+import CourseAdmin from "./pages/CourseAdmin";
 function App() {
   return (
     // PHẢI có Router bao ngoài cùng để không bị lỗi useNavigate
@@ -46,6 +47,7 @@ function App() {
             <Route path="/subjects" element={<SubjectPage />} />
             <Route path="/teacher-admin" element={<TeacherAdmin />} />
             <Route path="/admin/accounts" element={<AccountManagement />} />
+            <Route path="/admin/courses" element={<CourseAdmin />} />
 
             {/* SỬA LẠI ĐƯỜNG DẪN NÀY CHO KHỚP VỚI TRÌNH DUYỆT CỦA VŨ */}
             <Route path="/teachers" element={<TeacherDashboard />} />
