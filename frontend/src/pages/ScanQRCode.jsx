@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { Html5Qrcode } from "html5-qrcode";
 
-const API_BASE_URL = "https://asyllabic-emelina-uncheated.ngrok-free.dev/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function ScanQRCode() {
   const [status, setStatus] = useState("Vui lòng cấp quyền Camera...");

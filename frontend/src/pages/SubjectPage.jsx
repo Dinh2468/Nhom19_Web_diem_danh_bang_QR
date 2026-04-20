@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const BASE_URL = "https://asyllabic-emelina-uncheated.ngrok-free.dev/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const SUBJECT_API_URL = `${BASE_URL}/subjects`;
 
 function SubjectPage() {
