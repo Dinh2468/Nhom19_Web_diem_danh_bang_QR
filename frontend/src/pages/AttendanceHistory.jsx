@@ -91,36 +91,39 @@ function AttendanceHistory() {
               </thead>
               <tbody className="divide-y divide-gray-100 text-gray-700">
                 {history.map((item) => (
-                  <tr key={item.id || item.datetime || item.qr_data}>
+                  <tr key={item.id}>
                     <td className="px-4 py-4 text-sm font-semibold text-gray-900">
-                      {item.datetime || item.created_at || "-"}
+                      {/* Hiển thị thời gian check-in tiếng Việt */}
+                      {item.checkin_time
+                        ? new Date(item.checkin_time).toLocaleString("vi-VN")
+                        : "-"}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="font-semibold">
-                        {item.subject_name || item.qr_data || "-"}
+                      <div className="font-semibold text-indigo-600">
+                        {/* Lấy tên môn học từ quan hệ session -> course */}
+                        {item.session?.course?.course_name || "Môn học"}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {item.qr_data
-                          ? item.qr_data.slice(0, 35) +
-                            (item.qr_data.length > 35 ? "..." : "")
-                          : "-"}
+                      <div className="text-[10px] text-gray-400">
+                        Phòng: {item.session?.room || "N/A"}
                       </div>
                     </td>
                     <td className="px-4 py-4">
                       <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${item.status === "present" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                          item.status === "Có mặt"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
                       >
-                        {item.status || item.attendance_status || "Đã ghi"}
+                        {item.status}
                       </span>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">
                       {item.latitude && item.longitude
-                        ? `${item.latitude.toFixed(6)}, ${item.longitude.toFixed(6)}`
+                        ? `${Number(item.latitude).toFixed(6)}, ${Number(item.longitude).toFixed(6)}`
                         : "Chưa có GPS"}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">
-                      {item.note || item.remark || "-"}
-                    </td>
+                    <td className="px-4 py-4 text-sm text-gray-600">-</td>
                   </tr>
                 ))}
               </tbody>

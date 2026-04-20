@@ -73,6 +73,12 @@ const Navbar = () => {
                       👨‍🎓 Sinh viên
                     </Link>
                     <Link
+                      to="/teacher-admin"
+                      className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
+                    >
+                      👩‍🏫 Giáo viên
+                    </Link>
+                    <Link
                       to="/classes"
                       className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50"
                     >
