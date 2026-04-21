@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Student; // Đổi từ User sang Student để lấy đúng bảng sinh viên
+use App\Models\Student;
 
 class SinhVienController extends Controller
 {

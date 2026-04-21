@@ -13,7 +13,7 @@ function TeacherPage() {
   const [teacherCode, setTeacherCode] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
-
+  const [searchTerm, setSearchTerm] = useState("");
   // Lấy Header chứa Token
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
@@ -40,6 +40,14 @@ function TeacherPage() {
   useEffect(() => {
     fetchTeachers();
   }, [fetchTeachers]);
+
+  // 2. Logic tìm kiếm: Lọc danh sách dựa trên tên hoặc mã giáo viên
+  const filteredTeachers = teachers.filter(
+    (gv) =>
+      gv.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      gv.teacher_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      gv.email?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   // 2. Thêm giáo viên mới
   const addTeacher = () => {
@@ -87,13 +95,46 @@ function TeacherPage() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-indigo-700">
-        Quản Lý Giáo Viên
-      </h1>
+    <div className="relative space-y-8 overflow-hidden py-4">
+      <div className="absolute top-0 -left-10 w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="absolute bottom-10 right-0 w-64 h-64 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
+      <div className="relative flex items-center justify-between border-b border-gray-100 pb-5">
+        <div>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Quản lý Giáo Viên
+          </h2>
+        </div>
+      </div>
+      {/* Thanh tìm kiếm */}
+      <div className="bg-white p-4 rounded-xl shadow-sm mb-8 border border-gray-100">
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </span>
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-3 border-2 border-gray-50 rounded-xl focus:border-indigo-400 focus:bg-white bg-gray-50 outline-none transition-all"
+            placeholder="Tìm kiếm giáo viên theo tên, mã hoặc email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
       {/* Form Thêm Giáo Viên */}
-      <div className="bg-white p-6 rounded-xl shadow-sm mb-8 flex flex-wrap gap-4 items-end">
+      {/* <div className="bg-white p-6 rounded-xl shadow-sm mb-8 flex flex-wrap gap-4 items-end">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-bold text-gray-500 mb-1">
             MÃ GIÁO VIÊN
@@ -133,7 +174,7 @@ function TeacherPage() {
         >
           Thêm Giáo Viên
         </button>
-      </div>
+      </div> */}
 
       {/* Bảng Danh Sách */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -161,31 +202,13 @@ function TeacherPage() {
                   Đang tải dữ liệu...
                 </td>
               </tr>
-            ) : (
-              teachers.map((gv) => (
+            ) : filteredTeachers.length > 0 ? (
+              filteredTeachers.map((gv) => (
                 <tr
                   key={gv.id}
                   className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
                 >
-                  <td className="px-6 py-4 font-medium text-gray-700">
-                    {editingId === gv.id ? (
-                      <input
-                        className="border rounded p-1 w-full"
-                        value={gv.teacher_code}
-                        onChange={(e) =>
-                          setTeachers(
-                            teachers.map((t) =>
-                              t.id === gv.id
-                                ? { ...t, teacher_code: e.target.value }
-                                : t,
-                            ),
-                          )
-                        }
-                      />
-                    ) : (
-                      gv.teacher_code
-                    )}
-                  </td>
+                  <td className="px-6 py-4 text-gray-600">{gv.teacher_code}</td>
                   <td className="px-6 py-4 text-gray-600">
                     {editingId === gv.id ? (
                       <input
@@ -261,6 +284,12 @@ function TeacherPage() {
                   </td>
                 </tr>
               ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center py-10 text-gray-400">
+                  Không có giáo viên nào để hiển thị.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

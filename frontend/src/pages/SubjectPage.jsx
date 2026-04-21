@@ -7,9 +7,11 @@ const SUBJECT_API_URL = `${BASE_URL}/subjects`;
 function SubjectPage() {
   const [subjects, setSubjects] = useState([]);
   const [subjectName, setSubjectName] = useState("");
+  const [subjectCode, setSubjectCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // Hàm lấy header Authorization từ token lưu trong localStorage để gửi kèm trong các request
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
     return {
@@ -41,9 +43,14 @@ function SubjectPage() {
     e.preventDefault();
     // Đỉnh đặt tên cột là subject_name nên phải gửi đúng tên này
     axios
-      .post(SUBJECT_API_URL, { subject_name: subjectName }, getAuthHeader())
+      .post(
+        SUBJECT_API_URL,
+        { subject_name: subjectName, subject_code: subjectCode },
+        getAuthHeader(),
+      )
       .then(() => {
         setSubjectName("");
+        setSubjectCode("");
         fetchSubjects();
         alert("Thêm môn học thành công!");
       })
@@ -89,9 +96,6 @@ function SubjectPage() {
         <h2 className="text-3xl font-extrabold text-gray-900">
           Quản lý Môn học
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Admin / Cập nhật từ danh mục của Đỉnh
-        </p>
       </div>
 
       {/* FORM THÊM */}
@@ -100,6 +104,17 @@ function SubjectPage() {
           onSubmit={addSubject}
           className="flex flex-col md:flex-row gap-4 items-end"
         >
+          <div className="flex-1 w-full">
+            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
+              Mã môn học
+            </label>
+            <input
+              placeholder="Ví dụ: WEB101"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 outline-none text-sm"
+              value={subjectCode}
+              onChange={(e) => setSubjectCode(e.target.value)}
+            />
+          </div>
           <div className="flex-1 w-full">
             <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">
               Tên môn học

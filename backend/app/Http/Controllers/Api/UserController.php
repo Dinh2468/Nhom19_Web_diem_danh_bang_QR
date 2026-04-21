@@ -28,6 +28,7 @@ class UserController extends Controller
                 'unique:students,student_code',
                 'unique:teachers,teacher_code'
             ],
+            'class_id' => 'nullable|exists:classes,id' // Chỉ cần nếu là student
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -40,6 +41,7 @@ class UserController extends Controller
                     'student_code' => $validated['code'],
                     'full_name'    => $validated['name'],
                     'email'        => $validated['email'],
+                    'class_id'     => $validated['class_id'],
                 ]);
                 $studentId = $student->id;
             } elseif ($validated['role'] === 'teacher') {
@@ -60,6 +62,7 @@ class UserController extends Controller
                 'student_id' => $studentId,
                 'teacher_id' => $teacherId,
                 'qr_token'   => $validated['code'] ?? 'ADM_' . time(),
+                'class_id'   => $validated['class_id'] ?? null,
             ]);
 
             return response()->json(['message' => 'Tạo tài khoản thành công', 'user' => $user], 201);

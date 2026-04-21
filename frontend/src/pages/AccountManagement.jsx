@@ -8,7 +8,7 @@ const USER_API_URL = `${BASE_URL}/users`;
 function AccountManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [classes, setClasses] = useState([]); // Lấy danh sách lớp học để chọn khi tạo tài khoản sinh viên
   // Form state để thêm tài khoản
   const [formData, setFormData] = useState({
     name: "",
@@ -16,9 +16,10 @@ function AccountManagement() {
     password: "",
     role: "student",
     code: "",
+    class_id: "",
   });
 
-  // Hàm lấy Header chứa Token giống các file khác
+  // Hàm lấy header Authorization từ token lưu trong localStorage để gửi kèm trong các request
   const getAuthHeader = () => {
     const token = localStorage.getItem("token");
     return {
@@ -28,6 +29,13 @@ function AccountManagement() {
       },
     };
   };
+
+  const fetchClasses = useCallback(() => {
+    axios
+      .get(`${BASE_URL}/classes`, getAuthHeader())
+      .then((res) => setClasses(res.data || []))
+      .catch((err) => console.error("Lỗi lấy danh sách lớp học:", err));
+  }, []);
 
   const fetchUsers = useCallback(() => {
     setLoading(true);
@@ -42,7 +50,8 @@ function AccountManagement() {
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchClasses();
+  }, [fetchUsers, fetchClasses]);
 
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -74,7 +83,17 @@ function AccountManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-8 overflow-hidden py-4">
+      <div className="absolute top-0 -left-10 w-64 h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="absolute bottom-10 right-0 w-64 h-64 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
+
+      <div className="relative flex items-center justify-between border-b border-gray-100 pb-5">
+        <div>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Quản lý Tài khoản
+          </h2>
+        </div>
+      </div>
       {/* Form thêm tài khoản */}
       <div className="p-8 bg-white rounded-3xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-bold mb-4">Thêm tài khoản mới</h2>
@@ -137,6 +156,23 @@ function AccountManagement() {
               required
             />
           )}
+          {formData.role === "student" && (
+            <select
+              className="border p-2 rounded-lg"
+              value={formData.class_id} // Thêm trường class_id vào formData
+              onChange={
+                (e) => setFormData({ ...formData, class_id: e.target.value }) // Cập nhật class_id khi chọn lớp học
+              }
+              required // Bắt buộc chọn lớp học khi tạo tài khoản sinh viên
+            >
+              <option value="">Chọn lớp học</option>
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.class_name}
+                </option>
+              ))}
+            </select>
+          )}
 
           <button className="bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 transition">
             Thêm
@@ -147,7 +183,7 @@ function AccountManagement() {
       {/* Danh sách tài khoản */}
       <div className="p-8 bg-white rounded-3xl shadow-sm border border-gray-100">
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Quản lý tài khoản hệ thống
+          Danh sách tài khoản
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">

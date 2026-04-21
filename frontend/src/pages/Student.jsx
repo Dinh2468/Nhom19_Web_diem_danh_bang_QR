@@ -14,6 +14,7 @@ function StudentPage() {
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [classId, setClassId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Hàm lấy Header tự động (Tránh lỗi 401/trắng trang nếu API yêu cầu Token)
   const getAuthHeader = () => {
@@ -99,7 +100,7 @@ function StudentPage() {
       })
       .catch((err) => console.error("Lỗi cập nhật:", err));
   };
-
+  // Hàm xử lý thay đổi input khi đang edit (Cập nhật state ngay khi nhập)
   const handleInputChange = (id, field, value) => {
     setStudents((prev) =>
       prev.map((sv) => (sv.id === id ? { ...sv, [field]: value } : sv)),
@@ -115,7 +116,16 @@ function StudentPage() {
         .catch((err) => console.error("Lỗi xóa:", err));
     }
   };
-
+  // 6. Logic tìm kiếm: Lọc danh sách dựa trên tên hoặc mã sinh viên
+  const filteredStudents = students.filter(
+    (sv) =>
+      sv.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sv.student_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sv.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sv.classroom?.class_name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()),
+  );
   return (
     <div className="relative space-y-8 overflow-hidden py-4">
       {/* Khối màu loang nền */}
@@ -149,8 +159,35 @@ function StudentPage() {
         </div>
       </div>
 
+      {/* Thanh tìm kiếm */}
+      <div className="bg-white p-4 rounded-xl shadow-sm mb-8 border border-gray-100">
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </span>
+          <input
+            type="text"
+            className="w-full pl-10 pr-4 py-3 border-2 border-gray-50 rounded-xl focus:border-indigo-400 focus:bg-white bg-gray-50 outline-none transition-all"
+            placeholder="Tìm kiếm sinh viên theo tên, mã hoặc email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
       {/* FORM THÊM MỚI */}
-      <section className="relative bg-white/90 backdrop-blur-sm p-8 rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/30">
+      {/* <section className="relative bg-white/90 backdrop-blur-sm p-8 rounded-2xl border border-gray-100 shadow-xl shadow-gray-200/30">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-2 h-6 bg-indigo-600 rounded-full"></div>
           <h3 className="text-lg font-bold text-gray-800">
@@ -236,7 +273,7 @@ function StudentPage() {
             </button>
           </div>
         </form>
-      </section>
+      </section> */}
 
       {/* BẢNG DANH SÁCH */}
       <div className="relative bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl border border-gray-100 overflow-hidden">
@@ -258,14 +295,8 @@ function StudentPage() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 inline-block"></div>
                 </td>
               </tr>
-            ) : students.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="text-center py-10 text-gray-400">
-                  Danh sách trống.
-                </td>
-              </tr>
-            ) : (
-              students.map((sv) => (
+            ) : filteredStudents.length > 0 ? (
+              filteredStudents.map((sv) => (
                 <tr
                   key={sv.id}
                   className="hover:bg-indigo-50/30 transition-colors"
@@ -356,6 +387,12 @@ function StudentPage() {
                   </td>
                 </tr>
               ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="text-center py-10 text-gray-400">
+                  Không tìm thấy sinh viên nào.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
