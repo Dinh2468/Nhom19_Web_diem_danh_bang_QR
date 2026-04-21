@@ -62,7 +62,7 @@ function SubjectPage() {
     axios
       .put(
         `${SUBJECT_API_URL}/${id}`,
-        { subject_name: sub.subject_name },
+        { subject_name: sub.subject_name, subject_code: sub.subject_code },
         getAuthHeader(),
       )
       .then(() => {
